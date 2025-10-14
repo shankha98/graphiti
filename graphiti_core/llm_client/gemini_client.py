@@ -288,7 +288,7 @@ class GeminiClient(LLMClient):
             # Get the appropriate model for the requested size
             model = self._get_model_for_size(model_size)
             
-            logger.debug(f'Using Gemini model: {model}')
+            logger.log(f'Using Gemini model: {model}')
 
             # Resolve max_tokens using precedence rules (see _resolve_max_tokens for details)
             resolved_max_tokens = self._resolve_max_tokens(max_tokens, model)
@@ -307,7 +307,7 @@ class GeminiClient(LLMClient):
                 ),
             )
 
-            logger.debug(
+            logger.log(
                 f'Using Gemini model: {model} with max_output_tokens: {resolved_max_tokens}'
             )
 
@@ -318,7 +318,7 @@ class GeminiClient(LLMClient):
                 config=generation_config,
             )
 
-            logger.debug(f'Gemini response: {response.text}')
+            logger.log(f'Gemini response: {response.text}')
 
             # Always capture the raw output for debugging
             raw_output = getattr(response, 'text', None)
