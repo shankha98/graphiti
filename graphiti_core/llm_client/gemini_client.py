@@ -270,6 +270,8 @@ class GeminiClient(LLMClient):
                     'Do not include any explanatory text before or after the JSON.\n\n'
                 )
 
+            logger.debug(f'Gemini system prompt: {system_prompt}')
+
             # Add messages content
             # First check for a system message
             if messages and messages[0].role == 'system':
@@ -285,6 +287,8 @@ class GeminiClient(LLMClient):
 
             # Get the appropriate model for the requested size
             model = self._get_model_for_size(model_size)
+            
+            logger.debug(f'Using Gemini model: {model}')
 
             # Resolve max_tokens using precedence rules (see _resolve_max_tokens for details)
             resolved_max_tokens = self._resolve_max_tokens(max_tokens, model)
@@ -303,12 +307,18 @@ class GeminiClient(LLMClient):
                 ),
             )
 
+            logger.debug(
+                f'Using Gemini model: {model} with max_output_tokens: {resolved_max_tokens}'
+            )
+
             # Generate content using the simple string approach
             response = await self.client.aio.models.generate_content(
                 model=model,
                 contents=gemini_messages,
                 config=generation_config,
             )
+
+            logger.debug(f'Gemini response: {response.text}')
 
             # Always capture the raw output for debugging
             raw_output = getattr(response, 'text', None)
