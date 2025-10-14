@@ -45,14 +45,16 @@ else:
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = 'gemini-2.5-flash'
-DEFAULT_SMALL_MODEL = 'gemini-2.5-flash-lite-preview-06-17'
+DEFAULT_SMALL_MODEL = 'gemini-2.5-flash-lite-preview-09-2025'
 
 # Maximum output tokens for different Gemini models
 GEMINI_MODEL_MAX_TOKENS = {
     # Gemini 2.5 models
     'gemini-2.5-pro': 65536,
     'gemini-2.5-flash': 65536,
+    "gemini-2.5-flash-preview-09-2025": 65536,
     'gemini-2.5-flash-lite': 64000,
+    'gemini-2.5-flash-lite-preview-09-2025': 64000,
     'models/gemini-2.5-flash-lite-preview-06-17': 64000,
     # Gemini 2.0 models
     'gemini-2.0-flash': 8192,
@@ -295,6 +297,10 @@ class GeminiClient(LLMClient):
                 response_schema=response_model if response_model else None,
                 system_instruction=system_prompt,
                 thinking_config=self.thinking_config,
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+                tool_config=types.ToolConfig(
+                    function_calling_config=types.FunctionCallingConfig(mode=None)
+                ),
             )
 
             # Generate content using the simple string approach
@@ -324,14 +330,8 @@ class GeminiClient(LLMClient):
                 except Exception as e:
                     if raw_output:
                         logger.error(
-                            '🦀 LLM generation failed parsing as JSON, will try to salvage.'
+                            '🦀 LLM generation failed parsing as JSON'
                         )
-                        logger.error(self._get_failed_generation_log(gemini_messages, raw_output))
-                        # Try to salvage
-                        salvaged = self.salvage_json(raw_output)
-                        if salvaged is not None:
-                            logger.warning('Salvaged partial JSON from truncated/malformed output.')
-                            return salvaged
                     raise Exception(f'Failed to parse structured response: {e}') from e
 
             # Otherwise, return the response text as a dictionary
