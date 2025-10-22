@@ -15,12 +15,43 @@ limitations under the License.
 """
 
 import json
+from datetime import date, datetime, time
 from typing import Any
 
-DO_NOT_ESCAPE_UNICODE = '\nDo not escape unicode characters.\n'
+DO_NOT_ESCAPE_UNICODE = "\nDo not escape unicode characters.\n"
 
 
-def to_prompt_json(data: Any, ensure_ascii: bool = False, indent: int | None = None) -> str:
+class PromptJSONEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder for serializing data to prompts.
+
+    Handles special types that are not natively JSON serializable:
+    - datetime objects (including Neo4j DateTime)
+    - date objects
+    - time objects
+    """
+
+    def default(self, obj):
+        # Handle standard datetime objects
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        # Handle date objects
+        if isinstance(obj, date):
+            return obj.isoformat()
+        # Handle time objects
+        if isinstance(obj, time):
+            return obj.isoformat()
+        # Handle Neo4j temporal types (DateTime, Date, Time, etc.)
+        # These have an iso_format() method
+        if hasattr(obj, "iso_format") and callable(obj.iso_format):
+            return obj.iso_format()
+        # Fallback to default behavior
+        return super().default(obj)
+
+
+def to_prompt_json(
+    data: Any, ensure_ascii: bool = False, indent: int | None = None
+) -> str:
     """
     Serialize data to JSON for use in prompts.
 
@@ -36,5 +67,9 @@ def to_prompt_json(data: Any, ensure_ascii: bool = False, indent: int | None = N
         By default (ensure_ascii=False), non-ASCII characters (e.g., Korean, Japanese, Chinese)
         are preserved in their original form in the prompt, making them readable
         in LLM logs and improving model understanding.
+
+        Handles Neo4j temporal types (DateTime, Date, Time) and standard Python datetime objects.
     """
-    return json.dumps(data, ensure_ascii=ensure_ascii, indent=indent)
+    return json.dumps(
+        data, ensure_ascii=ensure_ascii, indent=indent, cls=PromptJSONEncoder
+    )
