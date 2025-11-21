@@ -4,6 +4,24 @@ This directory contains example scripts demonstrating how to use Graphiti with a
 
 ## Scripts
 
+### 0. `init_test_db.py`
+
+Initializes the test database if it doesn't exist.
+
+**Usage:**
+
+```bash
+uv run python examples/init_test_db.py
+# or
+make example-init
+```
+
+**What it does:**
+
+- Checks if `kuzu_test.db` exists
+- Creates it if not present
+- Sets up the database schema (Entity, Episodic, Community nodes and relationships)
+
 ### 1. `test_kuzu_local.py`
 
 Creates a test episode and adds it to the graph.
