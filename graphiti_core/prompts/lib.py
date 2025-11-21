@@ -34,6 +34,9 @@ from .extract_edges import versions as extract_edges_versions
 from .extract_nodes import Prompt as ExtractNodesPrompt
 from .extract_nodes import Versions as ExtractNodesVersions
 from .extract_nodes import versions as extract_nodes_versions
+from .graph_agent import Prompt as GraphAgentPrompt
+from .graph_agent import Versions as GraphAgentVersions
+from .graph_agent import versions as graph_agent_versions
 from .invalidate_edges import Prompt as InvalidateEdgesPrompt
 from .invalidate_edges import Versions as InvalidateEdgesVersions
 from .invalidate_edges import versions as invalidate_edges_versions
@@ -53,6 +56,7 @@ class PromptLibrary(Protocol):
     extract_edge_dates: ExtractEdgeDatesPrompt
     summarize_nodes: SummarizeNodesPrompt
     eval: EvalPrompt
+    graph_agent: GraphAgentPrompt
 
 
 class PromptLibraryImpl(TypedDict):
@@ -64,6 +68,7 @@ class PromptLibraryImpl(TypedDict):
     extract_edge_dates: ExtractEdgeDatesVersions
     summarize_nodes: SummarizeNodesVersions
     eval: EvalVersions
+    graph_agent: GraphAgentVersions
 
 
 class VersionWrapper:
@@ -98,5 +103,6 @@ PROMPT_LIBRARY_IMPL: PromptLibraryImpl = {
     "extract_edge_dates": extract_edge_dates_versions,
     "summarize_nodes": summarize_nodes_versions,
     "eval": eval_versions,
+    "graph_agent": graph_agent_versions,
 }
 prompt_library: PromptLibrary = PromptLibraryWrapper(PROMPT_LIBRARY_IMPL)  # type: ignore[assignment]

@@ -24,6 +24,7 @@ from graphiti_core.edges import EntityEdge
 from graphiti_core.graphiti_types import GraphitiClients
 from graphiti_core.llm_client.config import ModelSize
 from graphiti_core.nodes import EntityNode, EpisodicNode
+from graphiti_core.prompts import prompt_library
 from graphiti_core.prompts.models import Message
 from graphiti_core.search.search import search
 from graphiti_core.search.search_config_recipes import (
@@ -119,21 +120,7 @@ class GraphAgent:
 
         # Initial context
         context_messages = [
-            Message(
-                role="system",
-                content=(
-                    "You are an expert Knowledge Graph engineer. Your goal is to extract entities and relationships "
-                    "from the given episode content and update the graph.\n"
-                    "You have access to a search tool to find existing nodes and edges.\n"
-                    "First, analyze the content and decide if you need to search for existing entities to avoid duplicates "
-                    "or to understand the context better.\n"
-                    "If you need more info, output a plan with `needs_more_info=True` and provide `search_queries`.\n"
-                    "If you have enough info, output a `GraphUpdate` with `is_final=True` containing the nodes and edges.\n"
-                    "IMPORTANT: If you find an existing node in the search results that matches an entity you are extracting, "
-                    "you MUST include its `uuid` in the `ExtractedNode` object. This is critical for deduplication.\n"
-                    "For edges, ensure the `source` and `target` names match the `name` of the nodes in your `nodes` list."
-                ),
-            ),
+            prompt_library.graph_agent.system_instruction({})[0],
             Message(
                 role="user",
                 content=self._build_initial_prompt(

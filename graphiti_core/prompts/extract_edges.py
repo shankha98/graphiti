@@ -81,6 +81,12 @@ def edge(context: dict[str, Any]) -> list[Message]:
 {context["edge_types"]}
 </FACT TYPES>
 
+**About FACT TYPES:**
+- These are the MOST IMPORTANT relationship types to extract
+- NOT exhaustive - extract ALL factual relationships, even if not listed
+- Use fact_type_signature to understand which entity types connect
+- Prefer listed FACT TYPES when applicable
+
 <PREVIOUS_MESSAGES>
 {to_prompt_json([ep for ep in context["previous_episodes"]])}
 </PREVIOUS_MESSAGES>
@@ -119,7 +125,7 @@ You may use information from the PREVIOUS MESSAGES only to disambiguate referenc
 1. **Entity ID Validation**: `source_entity_id` and `target_entity_id` must use only the `id` values from the ENTITIES list provided above.
    - **CRITICAL**: Using IDs not in the list will cause the edge to be rejected
 2. Each fact must involve two **distinct** entities.
-3. Use a SCREAMING_SNAKE_CASE string as the `relation_type` (e.g., FOUNDED, WORKS_AT).
+3. Use a SCREAMING_SNAKE_CASE string as the `relation_type` (e.g., FOUNDED, WORKS_AT, MET).
 4. Do not emit duplicate or semantically redundant facts.
 5. The `fact` should closely paraphrase the original source sentence(s). Do not verbatim quote the original text.
 6. Use `REFERENCE_TIME` to resolve vague or relative temporal expressions (e.g., "last week").
@@ -133,6 +139,62 @@ You may use information from the PREVIOUS MESSAGES only to disambiguate referenc
 - Leave both fields `null` if no explicit or resolvable time is stated.
 - If only a date is mentioned (no time), assume 00:00:00.
 - If only a year is mentioned, use January 1st at 00:00:00.
+
+# EXAMPLES
+
+**Example 1: Facts with explicit dates**
+Input: "Alice founded Acme Corp in 2020"
+Entities: [{{id: 1, name: "Alice"}}, {{id: 2, name: "Acme Corp"}}]
+Output:
+{{
+  relation_type: "FOUNDED",
+  source_entity_id: 1,
+  target_entity_id: 2,
+  fact: "Alice founded Acme Corp",
+  valid_at: "2020-01-01T00:00:00Z",
+  invalid_at: null
+}}
+
+**Example 2: Ongoing relationships with relative time**
+Input: "Bob started working at Google last year"
+REFERENCE_TIME: 2025-04-15T10:30:00Z
+Entities: [{{id: 3, name: "Bob"}}, {{id: 4, name: "Google"}}]
+Output:
+{{
+  relation_type: "WORKS_AT",
+  source_entity_id: 3,
+  target_entity_id: 4,
+  fact: "Bob has been employed at Google",
+  valid_at: "2024-01-01T00:00:00Z",  # Calculated from REFERENCE_TIME
+  invalid_at: null
+}}
+
+**Example 3: Terminated relationships**
+Input: "They are no longer friends as of yesterday"
+REFERENCE_TIME: 2025-04-15T10:30:00Z
+Entities: [{{id: 5, name: "Person A"}}, {{id: 6, name: "Person B"}}]
+Output:
+{{
+  relation_type: "FRIENDS_WITH",
+  source_entity_id: 5,
+  target_entity_id: 6,
+  fact: "Person A and Person B were friends but the relationship ended",
+  valid_at: null,
+  invalid_at: "2025-04-14T00:00:00Z"  # Yesterday from REFERENCE_TIME
+}}
+
+**Example 4: Facts without temporal information**
+Input: "Alice knows Carol"
+Entities: [{{id: 1, name: "Alice"}}, {{id: 7, name: "Carol"}}]
+Output:
+{{
+  relation_type: "KNOWS",
+  source_entity_id: 1,
+  target_entity_id: 7,
+  fact: "Alice knows Carol",
+  valid_at: null,
+  invalid_at: null
+}}
         """,
         ),
     ]
