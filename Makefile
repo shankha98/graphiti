@@ -1,4 +1,4 @@
-.PHONY: install format lint test all check
+.PHONY: install format lint test all check examples example-add example-stats example-search
 
 # Define variables
 PYTHON = python3
@@ -30,3 +30,16 @@ test:
 
 # Run format, lint, and test
 check: format lint test
+
+# Example scripts
+example-add:
+	$(UV) run python examples/test_kuzu_local.py
+
+example-stats:
+	$(UV) run python examples/show_graph_stats.py
+
+example-search:
+	$(UV) run python examples/search_graph.py
+
+# Run all examples in sequence
+examples: example-add example-stats example-search
