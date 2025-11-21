@@ -81,10 +81,10 @@ from graphiti_core.utils.maintenance.community_operations import (
 )
 from graphiti_core.utils.maintenance.edge_operations import (
     build_episodic_edges,
-    extract_edges,
     resolve_extracted_edge,
     resolve_extracted_edges,
 )
+from graphiti_core.utils.maintenance.graph_agent import GraphAgent
 from graphiti_core.utils.maintenance.graph_data_operations import (
     EPISODE_WINDOW_LEN,
     build_indices_and_constraints,
@@ -92,7 +92,6 @@ from graphiti_core.utils.maintenance.graph_data_operations import (
 )
 from graphiti_core.utils.maintenance.node_operations import (
     extract_attributes_from_nodes,
-    extract_nodes,
     resolve_extracted_nodes,
 )
 from graphiti_core.utils.ontology_utils.entity_types_utils import validate_entity_types
@@ -352,67 +351,6 @@ class Graphiti:
         and could impact database performance during execution.
         """
         await build_indices_and_constraints(self.driver, delete_existing)
-
-    async def _extract_and_resolve_nodes(
-        self,
-        episode: EpisodicNode,
-        previous_episodes: list[EpisodicNode],
-        entity_types: dict[str, type[BaseModel]] | None,
-        excluded_entity_types: list[str] | None,
-    ) -> tuple[list[EntityNode], dict[str, str], list[tuple[EntityNode, EntityNode]]]:
-        """Extract nodes from episode and resolve against existing graph."""
-        extracted_nodes = await extract_nodes(
-            self.clients,
-            episode,
-            previous_episodes,
-            entity_types,
-            excluded_entity_types,
-        )
-
-        nodes, uuid_map, duplicates = await resolve_extracted_nodes(
-            self.clients,
-            extracted_nodes,
-            episode,
-            previous_episodes,
-            entity_types,
-        )
-
-        return nodes, uuid_map, duplicates
-
-    async def _extract_and_resolve_edges(
-        self,
-        episode: EpisodicNode,
-        extracted_nodes: list[EntityNode],
-        previous_episodes: list[EpisodicNode],
-        edge_type_map: dict[tuple[str, str], list[str]],
-        group_id: str,
-        edge_types: dict[str, type[BaseModel]] | None,
-        nodes: list[EntityNode],
-        uuid_map: dict[str, str],
-    ) -> tuple[list[EntityEdge], list[EntityEdge]]:
-        """Extract edges from episode and resolve against existing graph."""
-        extracted_edges = await extract_edges(
-            self.clients,
-            episode,
-            extracted_nodes,
-            previous_episodes,
-            edge_type_map,
-            group_id,
-            edge_types,
-        )
-
-        edges = resolve_edge_pointers(extracted_edges, uuid_map)
-
-        resolved_edges, invalidated_edges = await resolve_extracted_edges(
-            self.clients,
-            edges,
-            episode,
-            nodes,
-            edge_types or {},
-            edge_type_map,
-        )
-
-        return resolved_edges, invalidated_edges
 
     async def _process_episode_data(
         self,
@@ -731,55 +669,20 @@ class Graphiti:
                     )
                 )
 
-                # Create default edge type map
-                edge_type_map_default = (
-                    {("Entity", "Entity"): list(edge_types.keys())}
-                    if edge_types is not None
-                    else {("Entity", "Entity"): []}
-                )
+                # Initialize Agent
+                agent = GraphAgent(self.clients)
 
-                # Extract and resolve nodes
-                extracted_nodes = await extract_nodes(
-                    self.clients,
+                # Process episode with Agent
+                nodes, entity_edges = await agent.process_episode(
                     episode,
                     previous_episodes,
                     entity_types,
-                    excluded_entity_types,
-                )
-
-                nodes, uuid_map, _ = await resolve_extracted_nodes(
-                    self.clients,
-                    extracted_nodes,
-                    episode,
-                    previous_episodes,
-                    entity_types,
-                )
-
-                # Extract and resolve edges in parallel with attribute extraction
-                (
-                    resolved_edges,
-                    invalidated_edges,
-                ) = await self._extract_and_resolve_edges(
-                    episode,
-                    extracted_nodes,
-                    previous_episodes,
-                    edge_type_map or edge_type_map_default,
-                    group_id,
                     edge_types,
-                    nodes,
-                    uuid_map,
                 )
-
-                # Extract node attributes
-                hydrated_nodes = await extract_attributes_from_nodes(
-                    self.clients, nodes, episode, previous_episodes, entity_types
-                )
-
-                entity_edges = resolved_edges + invalidated_edges
 
                 # Process and save episode data
                 episodic_edges, episode = await self._process_episode_data(
-                    episode, hydrated_nodes, entity_edges, now
+                    episode, nodes, entity_edges, now
                 )
 
                 # Update communities if requested
@@ -805,9 +708,8 @@ class Graphiti:
                         "episode.source": source.value,
                         "episode.reference_time": reference_time.isoformat(),
                         "group_id": group_id,
-                        "node.count": len(hydrated_nodes),
+                        "node.count": len(nodes),
                         "edge.count": len(entity_edges),
-                        "edge.invalidated_count": len(invalidated_edges),
                         "previous_episodes.count": len(previous_episodes),
                         "entity_types.count": len(entity_types) if entity_types else 0,
                         "edge_types.count": len(edge_types) if edge_types else 0,
@@ -824,7 +726,7 @@ class Graphiti:
                 return AddEpisodeResults(
                     episode=episode,
                     episodic_edges=episodic_edges,
-                    nodes=hydrated_nodes,
+                    nodes=nodes,
                     edges=entity_edges,
                     communities=communities,
                     community_edges=community_edges,

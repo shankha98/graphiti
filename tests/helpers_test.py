@@ -163,10 +163,18 @@ def mock_embedder():
 
     def mock_embed(input_data):
         if isinstance(input_data, str):
-            return embeddings[input_data]
+            if input_data in embeddings:
+                return embeddings[input_data]
+            else:
+                # Return generic embedding for unknown strings
+                return np.random.uniform(0.0, 0.9, embedding_dim).tolist()
         elif isinstance(input_data, list):
             combined_input = " ".join(input_data)
-            return embeddings[combined_input]
+            if combined_input in embeddings:
+                return embeddings[combined_input]
+            else:
+                # Return generic embedding for unknown strings
+                return np.random.uniform(0.0, 0.9, embedding_dim).tolist()
         else:
             raise ValueError(f"Unsupported input type: {type(input_data)}")
 
