@@ -25,7 +25,11 @@ from graphiti_core.edges import CommunityEdge, EntityEdge, EpisodicEdge
 from graphiti_core.graphiti import Graphiti
 from graphiti_core.llm_client import LLMClient
 from graphiti_core.nodes import CommunityNode, EntityNode, EpisodeType, EpisodicNode
-from graphiti_core.search.search_filters import ComparisonOperator, DateFilter, SearchFilters
+from graphiti_core.search.search_filters import (
+    ComparisonOperator,
+    DateFilter,
+    SearchFilters,
+)
 from graphiti_core.search.search_utils import (
     community_fulltext_search,
     community_similarity_search,
@@ -53,7 +57,9 @@ from graphiti_core.utils.maintenance.community_operations import (
     get_community_clusters,
     remove_communities,
 )
-from graphiti_core.utils.maintenance.edge_operations import filter_existing_duplicate_of_edges
+from graphiti_core.utils.maintenance.edge_operations import (
+    filter_existing_duplicate_of_edges,
+)
 from tests.helpers_test import (
     GraphProvider,
     assert_entity_edge_equals,

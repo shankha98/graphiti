@@ -24,7 +24,9 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from graphiti_core.driver.graph_operations.graph_operations import GraphOperationsInterface
+from graphiti_core.driver.graph_operations.graph_operations import (
+    GraphOperationsInterface,
+)
 from graphiti_core.driver.search_interface.search_interface import SearchInterface
 
 logger = logging.getLogger(__name__)

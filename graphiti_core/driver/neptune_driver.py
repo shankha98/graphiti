@@ -22,7 +22,12 @@ from typing import Any
 
 import boto3
 from langchain_aws.graphs import NeptuneAnalyticsGraph, NeptuneGraph
-from opensearchpy import OpenSearch, Urllib3AWSV4SignerAuth, Urllib3HttpConnection, helpers
+from opensearchpy import (
+    OpenSearch,
+    Urllib3AWSV4SignerAuth,
+    Urllib3HttpConnection,
+    helpers,
+)
 
 from graphiti_core.driver.driver import GraphDriver, GraphDriverSession, GraphProvider
 

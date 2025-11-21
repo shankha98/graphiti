@@ -37,32 +37,25 @@ else:
     except ImportError:
         # If gemini client is not installed, raise an ImportError
         raise ImportError(
-            'google-genai is required for GeminiClient. '
-            'Install it with: pip install graphiti-core[google-genai]'
+            "google-genai is required for GeminiClient. "
+            "Install it with: pip install graphiti-core[google-genai]"
         ) from None
 
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = 'gemini-2.5-flash'
-DEFAULT_SMALL_MODEL = 'gemini-2.5-flash-lite-preview-09-2025'
+DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_SMALL_MODEL = "gemini-2.5-flash-lite-preview-09-2025"
 
 # Maximum output tokens for different Gemini models
 GEMINI_MODEL_MAX_TOKENS = {
     # Gemini 2.5 models
-    'gemini-2.5-pro': 65536,
-    'gemini-2.5-flash': 65536,
+    "gemini-3-pro-preview": 65536,
+    "gemini-2.5-pro": 65536,
+    "gemini-2.5-flash": 65536,
     "gemini-2.5-flash-preview-09-2025": 65536,
-    'gemini-2.5-flash-lite': 64000,
-    'gemini-2.5-flash-lite-preview-09-2025': 64000,
-    'models/gemini-2.5-flash-lite-preview-06-17': 64000,
-    # Gemini 2.0 models
-    'gemini-2.0-flash': 8192,
-    'gemini-2.0-flash-lite': 8192,
-    # Gemini 1.5 models
-    'gemini-1.5-pro': 8192,
-    'gemini-1.5-flash': 8192,
-    'gemini-1.5-flash-8b': 8192,
+    "gemini-2.5-flash-lite": 64000,
+    "gemini-2.5-flash-lite-preview-09-2025": 64000,
 }
 
 # Default max tokens for models not in the mapping
@@ -98,7 +91,7 @@ class GeminiClient(LLMClient):
         cache: bool = False,
         max_tokens: int | None = None,
         thinking_config: types.ThinkingConfig | None = None,
-        client: 'genai.Client | None' = None,
+        client: "genai.Client | None" = None,
     ):
         """
         Initialize the GeminiClient with the provided configuration, cache setting, and optional thinking config.
@@ -128,38 +121,42 @@ class GeminiClient(LLMClient):
     def _check_safety_blocks(self, response) -> None:
         """Check if response was blocked for safety reasons and raise appropriate exceptions."""
         # Check if the response was blocked for safety reasons
-        if not (hasattr(response, 'candidates') and response.candidates):
+        if not (hasattr(response, "candidates") and response.candidates):
             return
 
         candidate = response.candidates[0]
-        if not (hasattr(candidate, 'finish_reason') and candidate.finish_reason == 'SAFETY'):
+        if not (
+            hasattr(candidate, "finish_reason") and candidate.finish_reason == "SAFETY"
+        ):
             return
 
         # Content was blocked for safety reasons - collect safety details
         safety_info = []
-        safety_ratings = getattr(candidate, 'safety_ratings', None)
+        safety_ratings = getattr(candidate, "safety_ratings", None)
 
         if safety_ratings:
             for rating in safety_ratings:
-                if getattr(rating, 'blocked', False):
-                    category = getattr(rating, 'category', 'Unknown')
-                    probability = getattr(rating, 'probability', 'Unknown')
-                    safety_info.append(f'{category}: {probability}')
+                if getattr(rating, "blocked", False):
+                    category = getattr(rating, "category", "Unknown")
+                    probability = getattr(rating, "probability", "Unknown")
+                    safety_info.append(f"{category}: {probability}")
 
         safety_details = (
-            ', '.join(safety_info) if safety_info else 'Content blocked for safety reasons'
+            ", ".join(safety_info)
+            if safety_info
+            else "Content blocked for safety reasons"
         )
-        raise Exception(f'Response blocked by Gemini safety filters: {safety_details}')
+        raise Exception(f"Response blocked by Gemini safety filters: {safety_details}")
 
     def _check_prompt_blocks(self, response) -> None:
         """Check if prompt was blocked and raise appropriate exceptions."""
-        prompt_feedback = getattr(response, 'prompt_feedback', None)
+        prompt_feedback = getattr(response, "prompt_feedback", None)
         if not prompt_feedback:
             return
 
-        block_reason = getattr(prompt_feedback, 'block_reason', None)
+        block_reason = getattr(prompt_feedback, "block_reason", None)
         if block_reason:
-            raise Exception(f'Prompt blocked by Gemini: {block_reason}')
+            raise Exception(f"Prompt blocked by Gemini: {block_reason}")
 
     def _get_model_for_size(self, model_size: ModelSize) -> str:
         """Get the appropriate model name based on the requested size."""
@@ -218,14 +215,14 @@ class GeminiClient(LLMClient):
         if not raw_output:
             return None
         # Try to salvage a JSON array
-        array_match = re.search(r'\]\s*$', raw_output)
+        array_match = re.search(r"\]\s*$", raw_output)
         if array_match:
             try:
                 return json.loads(raw_output[: array_match.end()])
             except Exception:
                 pass
         # Try to salvage a JSON object
-        obj_match = re.search(r'\}\s*$', raw_output)
+        obj_match = re.search(r"\}\s*$", raw_output)
         if obj_match:
             try:
                 return json.loads(raw_output[: obj_match.end()])
@@ -259,35 +256,36 @@ class GeminiClient(LLMClient):
         try:
             gemini_messages: typing.Any = []
             # If a response model is provided, add schema for structured output
-            system_prompt = ''
+            system_prompt = ""
             if response_model is not None:
                 # Get the schema from the Pydantic model
                 pydantic_schema = response_model.model_json_schema()
 
                 # Create instruction to output in the desired JSON format
                 system_prompt += (
-                    f'Output ONLY valid JSON matching this schema: {json.dumps(pydantic_schema)}.\n'
-                    'Do not include any explanatory text before or after the JSON.\n\n'
+                    f"Output ONLY valid JSON matching this schema: {json.dumps(pydantic_schema)}.\n"
+                    "Do not include any explanatory text before or after the JSON.\n\n"
                 )
 
-            logger.debug(f'Gemini system prompt: {system_prompt}')
+            logger.debug(f"Gemini system prompt: {system_prompt}")
 
             # Add messages content
             # First check for a system message
-            if messages and messages[0].role == 'system':
-                system_prompt = f'{messages[0].content}\n\n {system_prompt}'
+            if messages and messages[0].role == "system":
+                system_prompt = f"{messages[0].content}\n\n {system_prompt}"
                 messages = messages[1:]
 
             # Add the rest of the messages
             for m in messages:
                 m.content = self._clean_input(m.content)
                 gemini_messages.append(
-                    types.Content(role=m.role, parts=[types.Part.from_text(text=m.content)])
+                    types.Content(
+                        role=m.role, parts=[types.Part.from_text(text=m.content)]
+                    )
                 )
 
             # Get the appropriate model for the requested size
             model = self._get_model_for_size(model_size)
-            
 
             # Resolve max_tokens using precedence rules (see _resolve_max_tokens for details)
             resolved_max_tokens = self._resolve_max_tokens(max_tokens, model)
@@ -296,16 +294,17 @@ class GeminiClient(LLMClient):
             generation_config = types.GenerateContentConfig(
                 temperature=self.temperature,
                 max_output_tokens=resolved_max_tokens,
-                response_mime_type='application/json' if response_model else None,
+                response_mime_type="application/json" if response_model else None,
                 response_schema=response_model if response_model else None,
                 system_instruction=system_prompt,
                 thinking_config=self.thinking_config,
-                automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                    disable=True
+                ),
                 tool_config=types.ToolConfig(
                     function_calling_config=types.FunctionCallingConfig(mode=None)
                 ),
             )
-
 
             # Generate content using the simple string approach
             response = await self.client.aio.models.generate_content(
@@ -314,9 +313,8 @@ class GeminiClient(LLMClient):
                 config=generation_config,
             )
 
-
             # Always capture the raw output for debugging
-            raw_output = getattr(response, 'text', None)
+            raw_output = getattr(response, "text", None)
 
             # Check for safety and prompt blocks
             self._check_safety_blocks(response)
@@ -326,34 +324,34 @@ class GeminiClient(LLMClient):
             if response_model is not None:
                 try:
                     if not raw_output:
-                        raise ValueError('No response text')
+                        raise ValueError("No response text")
 
-                    validated_model = response_model.model_validate(json.loads(raw_output))
+                    validated_model = response_model.model_validate(
+                        json.loads(raw_output)
+                    )
 
                     # Return as a dictionary for API consistency
                     return validated_model.model_dump()
                 except Exception as e:
                     if raw_output:
-                        logger.error(
-                            '🦀 LLM generation failed parsing as JSON'
-                        )
-                    raise Exception(f'Failed to parse structured response: {e}') from e
+                        logger.error("🦀 LLM generation failed parsing as JSON")
+                    raise Exception(f"Failed to parse structured response: {e}") from e
 
             # Otherwise, return the response text as a dictionary
-            return {'content': raw_output}
+            return {"content": raw_output}
 
         except Exception as e:
             # Check if it's a rate limit error based on Gemini API error codes
             error_message = str(e).lower()
             if (
-                'rate limit' in error_message
-                or 'quota' in error_message
-                or 'resource_exhausted' in error_message
-                or '429' in str(e)
+                "rate limit" in error_message
+                or "quota" in error_message
+                or "resource_exhausted" in error_message
+                or "429" in str(e)
             ):
                 raise RateLimitError from e
 
-            logger.error(f'Error in generating LLM response: {e}')
+            logger.error(f"Error in generating LLM response: {e}")
             raise Exception from e
 
     async def generate_response(
@@ -384,14 +382,14 @@ class GeminiClient(LLMClient):
         messages[0].content += get_extraction_language_instruction(group_id)
 
         # Wrap entire operation in tracing span
-        with self.tracer.start_span('llm.generate') as span:
+        with self.tracer.start_span("llm.generate") as span:
             attributes = {
-                'llm.provider': 'gemini',
-                'model.size': model_size.value,
-                'max_tokens': max_tokens or self.max_tokens,
+                "llm.provider": "gemini",
+                "model.size": model_size.value,
+                "max_tokens": max_tokens or self.max_tokens,
             }
             if prompt_name:
-                attributes['prompt.name'] = prompt_name
+                attributes["prompt.name"] = prompt_name
             span.add_attributes(attributes)
 
             retry_count = 0
@@ -407,46 +405,53 @@ class GeminiClient(LLMClient):
                         model_size=model_size,
                     )
                     last_output = (
-                        response.get('content')
-                        if isinstance(response, dict) and 'content' in response
+                        response.get("content")
+                        if isinstance(response, dict) and "content" in response
                         else None
                     )
                     return response
                 except RateLimitError as e:
                     # Rate limit errors should not trigger retries (fail fast)
-                    span.set_status('error', str(e))
+                    span.set_status("error", str(e))
                     raise e
                 except Exception as e:
                     last_error = e
 
                     # Check if this is a safety block - these typically shouldn't be retried
-                    error_text = str(e) or (str(e.__cause__) if e.__cause__ else '')
-                    if 'safety' in error_text.lower() or 'blocked' in error_text.lower():
-                        logger.warning(f'Content blocked by safety filters: {e}')
-                        span.set_status('error', str(e))
-                        raise Exception(f'Content blocked by safety filters: {e}') from e
+                    error_text = str(e) or (str(e.__cause__) if e.__cause__ else "")
+                    if (
+                        "safety" in error_text.lower()
+                        or "blocked" in error_text.lower()
+                    ):
+                        logger.warning(f"Content blocked by safety filters: {e}")
+                        span.set_status("error", str(e))
+                        raise Exception(
+                            f"Content blocked by safety filters: {e}"
+                        ) from e
 
                     retry_count += 1
 
                     # Construct a detailed error message for the LLM
                     error_context = (
-                        f'The previous response attempt was invalid. '
-                        f'Error type: {e.__class__.__name__}. '
-                        f'Error details: {str(e)}. '
-                        f'Please try again with a valid response, ensuring the output matches '
-                        f'the expected format and constraints.'
+                        f"The previous response attempt was invalid. "
+                        f"Error type: {e.__class__.__name__}. "
+                        f"Error details: {str(e)}. "
+                        f"Please try again with a valid response, ensuring the output matches "
+                        f"the expected format and constraints."
                     )
 
-                    error_message = Message(role='user', content=error_context)
+                    error_message = Message(role="user", content=error_context)
                     messages.append(error_message)
                     logger.warning(
-                        f'Retrying after application error (attempt {retry_count}/{self.MAX_RETRIES}): {e}'
+                        f"Retrying after application error (attempt {retry_count}/{self.MAX_RETRIES}): {e}"
                     )
 
             # If we exit the loop without returning, all retries are exhausted
-            logger.error('🦀 LLM generation failed and retries are exhausted.')
+            logger.error("🦀 LLM generation failed and retries are exhausted.")
             logger.error(self._get_failed_generation_log(messages, last_output))
-            logger.error(f'Max retries ({self.MAX_RETRIES}) exceeded. Last error: {last_error}')
-            span.set_status('error', str(last_error))
+            logger.error(
+                f"Max retries ({self.MAX_RETRIES}) exceeded. Last error: {last_error}"
+            )
+            span.set_status("error", str(last_error))
             span.record_exception(last_error) if last_error else None
-            raise last_error or Exception('Max retries exceeded')
+            raise last_error or Exception("Max retries exceeded")

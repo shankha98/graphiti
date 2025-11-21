@@ -23,7 +23,12 @@ from abc import ABC, abstractmethod
 import httpx
 from diskcache import Cache
 from pydantic import BaseModel
-from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random_exponential
+from tenacity import (
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
 from ..prompts.models import Message
 from ..tracer import NoOpTracer, Tracer

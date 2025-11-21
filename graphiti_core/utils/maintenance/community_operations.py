@@ -10,7 +10,11 @@ from graphiti_core.embedder import EmbedderClient
 from graphiti_core.helpers import semaphore_gather
 from graphiti_core.llm_client import LLMClient
 from graphiti_core.models.nodes.node_db_queries import COMMUNITY_NODE_RETURN
-from graphiti_core.nodes import CommunityNode, EntityNode, get_community_node_from_record
+from graphiti_core.nodes import (
+    CommunityNode,
+    EntityNode,
+    get_community_node_from_record,
+)
 from graphiti_core.prompts import prompt_library
 from graphiti_core.prompts.summarize_nodes import Summary, SummaryDescription
 from graphiti_core.utils.datetime_utils import utc_now

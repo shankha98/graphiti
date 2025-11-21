@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from typing_extensions import LiteralString
 
 from graphiti_core.cross_encoder.client import CrossEncoderClient
-from graphiti_core.cross_encoder.openai_reranker_client import OpenAIRerankerClient
+from graphiti_core.cross_encoder.gemini_reranker_client import GeminiRerankerClient
 from graphiti_core.driver.driver import GraphDriver
 from graphiti_core.driver.neo4j_driver import Neo4jDriver
 from graphiti_core.edges import (
@@ -33,7 +33,7 @@ from graphiti_core.edges import (
     EpisodicEdge,
     create_entity_edge_embeddings,
 )
-from graphiti_core.embedder import EmbedderClient, OpenAIEmbedder
+from graphiti_core.embedder import EmbedderClient, GeminiEmbedder
 from graphiti_core.graphiti_types import GraphitiClients
 from graphiti_core.helpers import (
     get_default_group_id,
@@ -41,7 +41,7 @@ from graphiti_core.helpers import (
     validate_excluded_entity_types,
     validate_group_id,
 )
-from graphiti_core.llm_client import LLMClient, OpenAIClient
+from graphiti_core.llm_client import GeminiClient, LLMClient
 from graphiti_core.nodes import (
     CommunityNode,
     EntityNode,
@@ -156,13 +156,13 @@ class Graphiti:
             The password for authenticating with the Neo4j database.
         llm_client : LLMClient | None, optional
             An instance of LLMClient for natural language processing tasks.
-            If not provided, a default OpenAIClient will be initialized.
+            If not provided, a default GeminiClient will be initialized.
         embedder : EmbedderClient | None, optional
             An instance of EmbedderClient for embedding tasks.
-            If not provided, a default OpenAIEmbedder will be initialized.
+            If not provided, a default GeminiEmbedder will be initialized.
         cross_encoder : CrossEncoderClient | None, optional
             An instance of CrossEncoderClient for reranking tasks.
-            If not provided, a default OpenAIRerankerClient will be initialized.
+            If not provided, a default GeminiRerankerClient will be initialized.
         store_raw_episode_content : bool, optional
             Whether to store the raw content of episodes. Defaults to True.
         graph_driver : GraphDriver | None, optional
@@ -184,15 +184,15 @@ class Graphiti:
         -----
         This method establishes a connection to a graph database (Neo4j by default) using the provided
         credentials. It also sets up the LLM client, either using the provided client
-        or by creating a default OpenAIClient.
+        or by creating a default GeminiClient.
 
         The default database name is defined during the driver’s construction. If a different database name
         is required, it should be specified in the URI or set separately after
         initialization.
 
-        The OpenAI API key is expected to be set in the environment variables.
-        Make sure to set the OPENAI_API_KEY environment variable before initializing
-        Graphiti if you're using the default OpenAIClient.
+        The GOOGLE_API_KEY environment variable is expected to be set in the environment variables.
+        Make sure to set the GOOGLE_API_KEY environment variable before initializing
+        Graphiti if you're using the default GeminiClient.
         """
 
         if graph_driver:
@@ -207,15 +207,15 @@ class Graphiti:
         if llm_client:
             self.llm_client = llm_client
         else:
-            self.llm_client = OpenAIClient()
+            self.llm_client = GeminiClient()
         if embedder:
             self.embedder = embedder
         else:
-            self.embedder = OpenAIEmbedder()
+            self.embedder = GeminiEmbedder()
         if cross_encoder:
             self.cross_encoder = cross_encoder
         else:
-            self.cross_encoder = OpenAIRerankerClient()
+            self.cross_encoder = GeminiRerankerClient()
 
         # Initialize tracer
         self.tracer = create_tracer(tracer, trace_span_prefix)

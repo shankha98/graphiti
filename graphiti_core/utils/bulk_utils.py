@@ -28,7 +28,12 @@ from graphiti_core.driver.driver import (
     GraphDriverSession,
     GraphProvider,
 )
-from graphiti_core.edges import Edge, EntityEdge, EpisodicEdge, create_entity_edge_embeddings
+from graphiti_core.edges import (
+    Edge,
+    EntityEdge,
+    EpisodicEdge,
+    create_entity_edge_embeddings,
+)
 from graphiti_core.embedder import EmbedderClient
 from graphiti_core.graphiti_types import GraphitiClients
 from graphiti_core.helpers import normalize_l2, semaphore_gather

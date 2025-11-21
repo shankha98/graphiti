@@ -23,7 +23,11 @@ from pydantic import BaseModel
 
 from graphiti_core.llm_client.config import LLMConfig, ModelSize
 from graphiti_core.llm_client.errors import RateLimitError
-from graphiti_core.llm_client.gemini_client import DEFAULT_MODEL, DEFAULT_SMALL_MODEL, GeminiClient
+from graphiti_core.llm_client.gemini_client import (
+    DEFAULT_MODEL,
+    DEFAULT_SMALL_MODEL,
+    GeminiClient,
+)
 from graphiti_core.prompts.models import Message
 
 
