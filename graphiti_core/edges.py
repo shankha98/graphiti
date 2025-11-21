@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 class Edge(BaseModel, ABC):
     uuid: str = Field(default_factory=lambda: str(uuid4()))
-    group_id: str = Field(description='partition of the graph')
+    group_id: str = Field(description="partition of the graph")
     source_node_uuid: str
     target_node_uuid: str
     created_at: datetime
@@ -80,12 +80,14 @@ class Edge(BaseModel, ABC):
                 uuid=self.uuid,
             )
 
-        logger.debug(f'Deleted Edge: {self.uuid}')
+        logger.debug(f"Deleted Edge: {self.uuid}")
 
     @classmethod
     async def delete_by_uuids(cls, driver: GraphDriver, uuids: list[str]):
         if driver.graph_operations_interface:
-            return await driver.graph_operations_interface.edge_delete_by_uuids(cls, driver, uuids)
+            return await driver.graph_operations_interface.edge_delete_by_uuids(
+                cls, driver, uuids
+            )
 
         if driver.provider == GraphProvider.KUZU:
             await driver.execute_query(
@@ -114,7 +116,7 @@ class Edge(BaseModel, ABC):
                 uuids=uuids,
             )
 
-        logger.debug(f'Deleted Edges: {uuids}')
+        logger.debug(f"Deleted Edges: {uuids}")
 
     def __hash__(self):
         return hash(self.uuid)
@@ -139,7 +141,7 @@ class EpisodicEdge(Edge):
             created_at=self.created_at,
         )
 
-        logger.debug(f'Saved edge to Graph: {self.uuid}')
+        logger.debug(f"Saved edge to Graph: {self.uuid}")
 
         return result
 
@@ -152,7 +154,7 @@ class EpisodicEdge(Edge):
             """
             + EPISODIC_EDGE_RETURN,
             uuid=uuid,
-            routing_='r',
+            routing_="r",
         )
 
         edges = [get_episodic_edge_from_record(record) for record in records]
@@ -171,7 +173,7 @@ class EpisodicEdge(Edge):
             """
             + EPISODIC_EDGE_RETURN,
             uuids=uuids,
-            routing_='r',
+            routing_="r",
         )
 
         edges = [get_episodic_edge_from_record(record) for record in records]
@@ -188,8 +190,8 @@ class EpisodicEdge(Edge):
         limit: int | None = None,
         uuid_cursor: str | None = None,
     ):
-        cursor_query: LiteralString = 'AND e.uuid < $uuid' if uuid_cursor else ''
-        limit_query: LiteralString = 'LIMIT $limit' if limit is not None else ''
+        cursor_query: LiteralString = "AND e.uuid < $uuid" if uuid_cursor else ""
+        limit_query: LiteralString = "LIMIT $limit" if limit is not None else ""
 
         records, _, _ = await driver.execute_query(
             """
@@ -208,7 +210,7 @@ class EpisodicEdge(Edge):
             group_ids=group_ids,
             uuid=uuid_cursor,
             limit=limit,
-            routing_='r',
+            routing_="r",
         )
 
         edges = [get_episodic_edge_from_record(record) for record in records]
@@ -219,40 +221,47 @@ class EpisodicEdge(Edge):
 
 
 class EntityEdge(Edge):
-    name: str = Field(description='name of the edge, relation name')
-    fact: str = Field(description='fact representing the edge and nodes that it connects')
-    fact_embedding: list[float] | None = Field(default=None, description='embedding of the fact')
+    name: str = Field(description="name of the edge, relation name")
+    fact: str = Field(
+        description="fact representing the edge and nodes that it connects"
+    )
+    fact_embedding: list[float] | None = Field(
+        default=None, description="embedding of the fact"
+    )
     episodes: list[str] = Field(
         default=[],
-        description='list of episode ids that reference these entity edges',
+        description="list of episode ids that reference these entity edges",
     )
     expired_at: datetime | None = Field(
-        default=None, description='datetime of when the node was invalidated'
+        default=None, description="datetime of when the node was invalidated"
     )
     valid_at: datetime | None = Field(
-        default=None, description='datetime of when the fact became true'
+        default=None, description="datetime of when the fact became true"
     )
     invalid_at: datetime | None = Field(
-        default=None, description='datetime of when the fact stopped being true'
+        default=None, description="datetime of when the fact stopped being true"
     )
     attributes: dict[str, Any] = Field(
-        default={}, description='Additional attributes of the edge. Dependent on edge name'
+        default={},
+        description="Additional attributes of the edge. Dependent on edge name",
     )
 
     async def generate_embedding(self, embedder: EmbedderClient):
         start = time()
 
-        text = self.fact.replace('\n', ' ')
+        text = self.fact.replace("\n", " ")
         self.fact_embedding = await embedder.create(input_data=[text])
 
         end = time()
-        logger.debug(f'embedded {text} in {end - start} ms')
+        logger.debug(f"embedded {text} in {end - start} ms")
 
         return self.fact_embedding
 
     async def load_fact_embedding(self, driver: GraphDriver):
         if driver.graph_operations_interface:
-            return await driver.graph_operations_interface.edge_load_embeddings(self, driver)
+            return await driver.graph_operations_interface.edge_load_embeddings(
+                self, driver
+            )
 
         query = """
             MATCH (n:Entity)-[e:RELATES_TO {uuid: $uuid}]->(m:Entity)
@@ -274,32 +283,32 @@ class EntityEdge(Edge):
         records, _, _ = await driver.execute_query(
             query,
             uuid=self.uuid,
-            routing_='r',
+            routing_="r",
         )
 
         if len(records) == 0:
             raise EdgeNotFoundError(self.uuid)
 
-        self.fact_embedding = records[0]['fact_embedding']
+        self.fact_embedding = records[0]["fact_embedding"]
 
     async def save(self, driver: GraphDriver):
         edge_data: dict[str, Any] = {
-            'source_uuid': self.source_node_uuid,
-            'target_uuid': self.target_node_uuid,
-            'uuid': self.uuid,
-            'name': self.name,
-            'group_id': self.group_id,
-            'fact': self.fact,
-            'fact_embedding': self.fact_embedding,
-            'episodes': self.episodes,
-            'created_at': self.created_at,
-            'expired_at': self.expired_at,
-            'valid_at': self.valid_at,
-            'invalid_at': self.invalid_at,
+            "source_uuid": self.source_node_uuid,
+            "target_uuid": self.target_node_uuid,
+            "uuid": self.uuid,
+            "name": self.name,
+            "group_id": self.group_id,
+            "fact": self.fact,
+            "fact_embedding": self.fact_embedding,
+            "episodes": self.episodes,
+            "created_at": self.created_at,
+            "expired_at": self.expired_at,
+            "valid_at": self.valid_at,
+            "invalid_at": self.invalid_at,
         }
 
         if driver.provider == GraphProvider.KUZU:
-            edge_data['attributes'] = json.dumps(self.attributes)
+            edge_data["attributes"] = json.dumps(self.attributes)
             result = await driver.execute_query(
                 get_entity_edge_save_query(driver.provider),
                 **edge_data,
@@ -311,7 +320,7 @@ class EntityEdge(Edge):
                 edge_data=edge_data,
             )
 
-        logger.debug(f'Saved edge to Graph: {self.uuid}')
+        logger.debug(f"Saved edge to Graph: {self.uuid}")
 
         return result
 
@@ -332,10 +341,12 @@ class EntityEdge(Edge):
             """
             + get_entity_edge_return_query(driver.provider),
             uuid=uuid,
-            routing_='r',
+            routing_="r",
         )
 
-        edges = [get_entity_edge_from_record(record, driver.provider) for record in records]
+        edges = [
+            get_entity_edge_from_record(record, driver.provider) for record in records
+        ]
 
         if len(edges) == 0:
             raise EdgeNotFoundError(uuid)
@@ -363,10 +374,12 @@ class EntityEdge(Edge):
             + get_entity_edge_return_query(driver.provider),
             source_node_uuid=source_node_uuid,
             target_node_uuid=target_node_uuid,
-            routing_='r',
+            routing_="r",
         )
 
-        edges = [get_entity_edge_from_record(record, driver.provider) for record in records]
+        edges = [
+            get_entity_edge_from_record(record, driver.provider) for record in records
+        ]
 
         return edges
 
@@ -391,10 +404,12 @@ class EntityEdge(Edge):
             """
             + get_entity_edge_return_query(driver.provider),
             uuids=uuids,
-            routing_='r',
+            routing_="r",
         )
 
-        edges = [get_entity_edge_from_record(record, driver.provider) for record in records]
+        edges = [
+            get_entity_edge_from_record(record, driver.provider) for record in records
+        ]
 
         return edges
 
@@ -407,14 +422,14 @@ class EntityEdge(Edge):
         uuid_cursor: str | None = None,
         with_embeddings: bool = False,
     ):
-        cursor_query: LiteralString = 'AND e.uuid < $uuid' if uuid_cursor else ''
-        limit_query: LiteralString = 'LIMIT $limit' if limit is not None else ''
+        cursor_query: LiteralString = "AND e.uuid < $uuid" if uuid_cursor else ""
+        limit_query: LiteralString = "LIMIT $limit" if limit is not None else ""
         with_embeddings_query: LiteralString = (
             """,
                 e.fact_embedding AS fact_embedding
                 """
             if with_embeddings
-            else ''
+            else ""
         )
 
         match_query = """
@@ -443,10 +458,12 @@ class EntityEdge(Edge):
             group_ids=group_ids,
             uuid=uuid_cursor,
             limit=limit,
-            routing_='r',
+            routing_="r",
         )
 
-        edges = [get_entity_edge_from_record(record, driver.provider) for record in records]
+        edges = [
+            get_entity_edge_from_record(record, driver.provider) for record in records
+        ]
 
         if len(edges) == 0:
             raise GroupsEdgesNotFoundError(group_ids)
@@ -469,10 +486,12 @@ class EntityEdge(Edge):
             """
             + get_entity_edge_return_query(driver.provider),
             node_uuid=node_uuid,
-            routing_='r',
+            routing_="r",
         )
 
-        edges = [get_entity_edge_from_record(record, driver.provider) for record in records]
+        edges = [
+            get_entity_edge_from_record(record, driver.provider) for record in records
+        ]
 
         return edges
 
@@ -488,7 +507,7 @@ class CommunityEdge(Edge):
             created_at=self.created_at,
         )
 
-        logger.debug(f'Saved edge to Graph: {self.uuid}')
+        logger.debug(f"Saved edge to Graph: {self.uuid}")
 
         return result
 
@@ -501,7 +520,7 @@ class CommunityEdge(Edge):
             """
             + COMMUNITY_EDGE_RETURN,
             uuid=uuid,
-            routing_='r',
+            routing_="r",
         )
 
         edges = [get_community_edge_from_record(record) for record in records]
@@ -518,7 +537,7 @@ class CommunityEdge(Edge):
             """
             + COMMUNITY_EDGE_RETURN,
             uuids=uuids,
-            routing_='r',
+            routing_="r",
         )
 
         edges = [get_community_edge_from_record(record) for record in records]
@@ -533,8 +552,8 @@ class CommunityEdge(Edge):
         limit: int | None = None,
         uuid_cursor: str | None = None,
     ):
-        cursor_query: LiteralString = 'AND e.uuid < $uuid' if uuid_cursor else ''
-        limit_query: LiteralString = 'LIMIT $limit' if limit is not None else ''
+        cursor_query: LiteralString = "AND e.uuid < $uuid" if uuid_cursor else ""
+        limit_query: LiteralString = "LIMIT $limit" if limit is not None else ""
 
         records, _, _ = await driver.execute_query(
             """
@@ -553,7 +572,7 @@ class CommunityEdge(Edge):
             group_ids=group_ids,
             uuid=uuid_cursor,
             limit=limit,
-            routing_='r',
+            routing_="r",
         )
 
         edges = [get_community_edge_from_record(record) for record in records]
@@ -564,46 +583,46 @@ class CommunityEdge(Edge):
 # Edge helpers
 def get_episodic_edge_from_record(record: Any) -> EpisodicEdge:
     return EpisodicEdge(
-        uuid=record['uuid'],
-        group_id=record['group_id'],
-        source_node_uuid=record['source_node_uuid'],
-        target_node_uuid=record['target_node_uuid'],
-        created_at=parse_db_date(record['created_at']),  # type: ignore
+        uuid=record["uuid"],
+        group_id=record["group_id"],
+        source_node_uuid=record["source_node_uuid"],
+        target_node_uuid=record["target_node_uuid"],
+        created_at=parse_db_date(record["created_at"]),  # type: ignore
     )
 
 
 def get_entity_edge_from_record(record: Any, provider: GraphProvider) -> EntityEdge:
-    episodes = record['episodes']
+    episodes = record["episodes"]
     if provider == GraphProvider.KUZU:
-        attributes = json.loads(record['attributes']) if record['attributes'] else {}
+        attributes = json.loads(record["attributes"]) if record["attributes"] else {}
     else:
-        attributes = record['attributes']
-        attributes.pop('uuid', None)
-        attributes.pop('source_node_uuid', None)
-        attributes.pop('target_node_uuid', None)
-        attributes.pop('fact', None)
-        attributes.pop('fact_embedding', None)
-        attributes.pop('name', None)
-        attributes.pop('group_id', None)
-        attributes.pop('episodes', None)
-        attributes.pop('created_at', None)
-        attributes.pop('expired_at', None)
-        attributes.pop('valid_at', None)
-        attributes.pop('invalid_at', None)
+        attributes = record["attributes"]
+        attributes.pop("uuid", None)
+        attributes.pop("source_node_uuid", None)
+        attributes.pop("target_node_uuid", None)
+        attributes.pop("fact", None)
+        attributes.pop("fact_embedding", None)
+        attributes.pop("name", None)
+        attributes.pop("group_id", None)
+        attributes.pop("episodes", None)
+        attributes.pop("created_at", None)
+        attributes.pop("expired_at", None)
+        attributes.pop("valid_at", None)
+        attributes.pop("invalid_at", None)
 
     edge = EntityEdge(
-        uuid=record['uuid'],
-        source_node_uuid=record['source_node_uuid'],
-        target_node_uuid=record['target_node_uuid'],
-        fact=record['fact'],
-        fact_embedding=record.get('fact_embedding'),
-        name=record['name'],
-        group_id=record['group_id'],
+        uuid=record["uuid"],
+        source_node_uuid=record["source_node_uuid"],
+        target_node_uuid=record["target_node_uuid"],
+        fact=record["fact"],
+        fact_embedding=record.get("fact_embedding"),
+        name=record["name"],
+        group_id=record["group_id"],
         episodes=episodes,
-        created_at=parse_db_date(record['created_at']),  # type: ignore
-        expired_at=parse_db_date(record['expired_at']),
-        valid_at=parse_db_date(record['valid_at']),
-        invalid_at=parse_db_date(record['invalid_at']),
+        created_at=parse_db_date(record["created_at"]),  # type: ignore
+        expired_at=parse_db_date(record["expired_at"]),
+        valid_at=parse_db_date(record["valid_at"]),
+        invalid_at=parse_db_date(record["invalid_at"]),
         attributes=attributes,
     )
 
@@ -612,20 +631,24 @@ def get_entity_edge_from_record(record: Any, provider: GraphProvider) -> EntityE
 
 def get_community_edge_from_record(record: Any):
     return CommunityEdge(
-        uuid=record['uuid'],
-        group_id=record['group_id'],
-        source_node_uuid=record['source_node_uuid'],
-        target_node_uuid=record['target_node_uuid'],
-        created_at=parse_db_date(record['created_at']),  # type: ignore
+        uuid=record["uuid"],
+        group_id=record["group_id"],
+        source_node_uuid=record["source_node_uuid"],
+        target_node_uuid=record["target_node_uuid"],
+        created_at=parse_db_date(record["created_at"]),  # type: ignore
     )
 
 
-async def create_entity_edge_embeddings(embedder: EmbedderClient, edges: list[EntityEdge]):
+async def create_entity_edge_embeddings(
+    embedder: EmbedderClient, edges: list[EntityEdge]
+):
     # filter out falsey values from edges
     filtered_edges = [edge for edge in edges if edge.fact]
 
     if len(filtered_edges) == 0:
         return
-    fact_embeddings = await embedder.create_batch([edge.fact for edge in filtered_edges])
+    fact_embeddings = await embedder.create_batch(
+        [edge.fact for edge in filtered_edges]
+    )
     for edge, fact_embedding in zip(filtered_edges, fact_embeddings, strict=True):
         edge.fact_embedding = fact_embedding

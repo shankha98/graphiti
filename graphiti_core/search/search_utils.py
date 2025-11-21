@@ -84,8 +84,8 @@ def calculate_cosine_similarity(vector1: list[float], vector2: list[float]) -> f
 def fulltext_query(query: str, group_ids: list[str] | None, driver: GraphDriver):
     if driver.provider == GraphProvider.KUZU:
         # Kuzu only supports simple queries.
-        if len(query.split(' ')) > MAX_QUERY_LENGTH:
-            return ''
+        if len(query.split(" ")) > MAX_QUERY_LENGTH:
+            return ""
         return query
     elif driver.provider == GraphProvider.FALKORDB:
         return driver.build_fulltext_query(query, group_ids, MAX_QUERY_LENGTH)
@@ -94,18 +94,18 @@ def fulltext_query(query: str, group_ids: list[str] | None, driver: GraphDriver)
         if group_ids is not None
         else []
     )
-    group_ids_filter = ''
+    group_ids_filter = ""
     for f in group_ids_filter_list:
-        group_ids_filter += f if not group_ids_filter else f' OR {f}'
+        group_ids_filter += f if not group_ids_filter else f" OR {f}"
 
-    group_ids_filter += ' AND ' if group_ids_filter else ''
+    group_ids_filter += " AND " if group_ids_filter else ""
 
     lucene_query = lucene_sanitize(query)
     # If the lucene query is too long return no query
-    if len(lucene_query.split(' ')) + len(group_ids or '') >= MAX_QUERY_LENGTH:
-        return ''
+    if len(lucene_query.split(" ")) + len(group_ids or "") >= MAX_QUERY_LENGTH:
+        return ""
 
-    full_query = group_ids_filter + '(' + lucene_query + ')'
+    full_query = group_ids_filter + "(" + lucene_query + ")"
 
     return full_query
 
@@ -138,7 +138,7 @@ async def get_mentioned_nodes(
         """
         + get_entity_node_return_query(driver.provider),
         uuids=episode_uuids,
-        routing_='r',
+        routing_="r",
     )
 
     nodes = [get_entity_node_from_record(record, driver.provider) for record in records]
@@ -159,7 +159,7 @@ async def get_communities_by_nodes(
         """
         + COMMUNITY_NODE_RETURN,
         uuids=node_uuids,
-        routing_='r',
+        routing_="r",
     )
 
     communities = [get_community_node_from_record(record) for record in records]
@@ -182,7 +182,7 @@ async def edge_fulltext_search(
     # fulltext search over facts
     fuzzy_query = fulltext_query(query, group_ids, driver)
 
-    if fuzzy_query == '':
+    if fuzzy_query == "":
         return []
 
     match_query = """
@@ -200,19 +200,19 @@ async def edge_fulltext_search(
     )
 
     if group_ids is not None:
-        filter_queries.append('e.group_id IN $group_ids')
-        filter_params['group_ids'] = group_ids
+        filter_queries.append("e.group_id IN $group_ids")
+        filter_params["group_ids"] = group_ids
 
-    filter_query = ''
+    filter_query = ""
     if filter_queries:
-        filter_query = ' WHERE ' + (' AND '.join(filter_queries))
+        filter_query = " WHERE " + (" AND ".join(filter_queries))
 
     if driver.provider == GraphProvider.NEPTUNE:
-        res = driver.run_aoss_query('edge_name_and_fact', query)  # pyright: ignore reportAttributeAccessIssue
-        if res['hits']['total']['value'] > 0:
+        res = driver.run_aoss_query("edge_name_and_fact", query)  # pyright: ignore reportAttributeAccessIssue
+        if res["hits"]["total"]["value"] > 0:
             input_ids = []
-            for r in res['hits']['hits']:
-                input_ids.append({'id': r['_source']['uuid'], 'score': r['_score']})
+            for r in res["hits"]["hits"]:
+                input_ids.append({"id": r["_source"]["uuid"], "score": r["_score"]})
 
             # Match the edge ids and return the values
             query = (
@@ -248,14 +248,16 @@ async def edge_fulltext_search(
                 query=fuzzy_query,
                 ids=input_ids,
                 limit=limit,
-                routing_='r',
+                routing_="r",
                 **filter_params,
             )
         else:
             return []
     else:
         query = (
-            get_relationships_query('edge_name_and_fact', limit=limit, provider=driver.provider)
+            get_relationships_query(
+                "edge_name_and_fact", limit=limit, provider=driver.provider
+            )
             + match_query
             + filter_query
             + """
@@ -273,7 +275,7 @@ async def edge_fulltext_search(
             query,
             query=fuzzy_query,
             limit=limit,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
 
@@ -317,24 +319,24 @@ async def edge_similarity_search(
     )
 
     if group_ids is not None:
-        filter_queries.append('e.group_id IN $group_ids')
-        filter_params['group_ids'] = group_ids
+        filter_queries.append("e.group_id IN $group_ids")
+        filter_params["group_ids"] = group_ids
 
         if source_node_uuid is not None:
-            filter_params['source_uuid'] = source_node_uuid
-            filter_queries.append('n.uuid = $source_uuid')
+            filter_params["source_uuid"] = source_node_uuid
+            filter_queries.append("n.uuid = $source_uuid")
 
         if target_node_uuid is not None:
-            filter_params['target_uuid'] = target_node_uuid
-            filter_queries.append('m.uuid = $target_uuid')
+            filter_params["target_uuid"] = target_node_uuid
+            filter_queries.append("m.uuid = $target_uuid")
 
-    filter_query = ''
+    filter_query = ""
     if filter_queries:
-        filter_query = ' WHERE ' + (' AND '.join(filter_queries))
+        filter_query = " WHERE " + (" AND ".join(filter_queries))
 
-    search_vector_var = '$search_vector'
+    search_vector_var = "$search_vector"
     if driver.provider == GraphProvider.KUZU:
-        search_vector_var = f'CAST($search_vector AS FLOAT[{len(search_vector)}])'
+        search_vector_var = f"CAST($search_vector AS FLOAT[{len(search_vector)}])"
 
     if driver.provider == GraphProvider.NEPTUNE:
         query = (
@@ -351,7 +353,7 @@ async def edge_similarity_search(
             search_vector=search_vector,
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
 
@@ -359,12 +361,12 @@ async def edge_similarity_search(
             # Calculate Cosine similarity then return the edge ids
             input_ids = []
             for r in resp:
-                if r['embedding']:
+                if r["embedding"]:
                     score = calculate_cosine_similarity(
-                        search_vector, list(map(float, r['embedding'].split(',')))
+                        search_vector, list(map(float, r["embedding"].split(",")))
                     )
                     if score > min_score:
-                        input_ids.append({'id': r['id'], 'score': score})
+                        input_ids.append({"id": r["id"], "score": score})
 
             # Match the edge ides and return the values
             query = """
@@ -393,7 +395,7 @@ async def edge_similarity_search(
                 search_vector=search_vector,
                 limit=limit,
                 min_score=min_score,
-                routing_='r',
+                routing_="r",
                 **filter_params,
             )
         else:
@@ -404,7 +406,9 @@ async def edge_similarity_search(
             + filter_query
             + """
             WITH DISTINCT e, n, m, """
-            + get_vector_cosine_func_query('e.fact_embedding', search_vector_var, driver.provider)
+            + get_vector_cosine_func_query(
+                "e.fact_embedding", search_vector_var, driver.provider
+            )
             + """ AS score
             WHERE score > $min_score
             RETURN
@@ -421,7 +425,7 @@ async def edge_similarity_search(
             search_vector=search_vector,
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
 
@@ -447,12 +451,12 @@ async def edge_bfs_search(
     )
 
     if group_ids is not None:
-        filter_queries.append('e.group_id IN $group_ids')
-        filter_params['group_ids'] = group_ids
+        filter_queries.append("e.group_id IN $group_ids")
+        filter_params["group_ids"] = group_ids
 
-    filter_query = ''
+    filter_query = ""
     if filter_queries:
-        filter_query = ' WHERE ' + (' AND '.join(filter_queries))
+        filter_query = " WHERE " + (" AND ".join(filter_queries))
 
     if driver.provider == GraphProvider.KUZU:
         # Kuzu stores entity edges twice with an intermediate node, so we need to match them
@@ -489,7 +493,7 @@ async def edge_bfs_search(
                 """,
                 bfs_origin_node_uuids=bfs_origin_node_uuids,
                 limit=limit,
-                routing_='r',
+                routing_="r",
                 **filter_params,
             )
             records.extend(sub_records)
@@ -544,7 +548,7 @@ async def edge_bfs_search(
             bfs_origin_node_uuids=bfs_origin_node_uuids,
             depth=bfs_max_depth,
             limit=limit,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
 
@@ -567,7 +571,7 @@ async def node_fulltext_search(
 
     # BM25 search to get top nodes
     fuzzy_query = fulltext_query(query, group_ids, driver)
-    if fuzzy_query == '':
+    if fuzzy_query == "":
         return []
 
     filter_queries, filter_params = node_search_filter_query_constructor(
@@ -575,23 +579,23 @@ async def node_fulltext_search(
     )
 
     if group_ids is not None:
-        filter_queries.append('n.group_id IN $group_ids')
-        filter_params['group_ids'] = group_ids
+        filter_queries.append("n.group_id IN $group_ids")
+        filter_params["group_ids"] = group_ids
 
-    filter_query = ''
+    filter_query = ""
     if filter_queries:
-        filter_query = ' WHERE ' + (' AND '.join(filter_queries))
+        filter_query = " WHERE " + (" AND ".join(filter_queries))
 
-    yield_query = 'YIELD node AS n, score'
+    yield_query = "YIELD node AS n, score"
     if driver.provider == GraphProvider.KUZU:
-        yield_query = 'WITH node AS n, score'
+        yield_query = "WITH node AS n, score"
 
     if driver.provider == GraphProvider.NEPTUNE:
-        res = driver.run_aoss_query('node_name_and_summary', query, limit=limit)  # pyright: ignore reportAttributeAccessIssue
-        if res['hits']['total']['value'] > 0:
+        res = driver.run_aoss_query("node_name_and_summary", query, limit=limit)  # pyright: ignore reportAttributeAccessIssue
+        if res["hits"]["total"]["value"] > 0:
             input_ids = []
-            for r in res['hits']['hits']:
-                input_ids.append({'id': r['_source']['uuid'], 'score': r['_score']})
+            for r in res["hits"]["hits"]:
+                input_ids.append({"id": r["_source"]["uuid"], "score": r["_score"]})
 
             # Match the edge ides and return the values
             query = (
@@ -612,7 +616,7 @@ async def node_fulltext_search(
                 ids=input_ids,
                 query=fuzzy_query,
                 limit=limit,
-                routing_='r',
+                routing_="r",
                 **filter_params,
             )
         else:
@@ -620,7 +624,7 @@ async def node_fulltext_search(
     else:
         query = (
             get_nodes_query(
-                'node_name_and_summary', '$query', limit=limit, provider=driver.provider
+                "node_name_and_summary", "$query", limit=limit, provider=driver.provider
             )
             + yield_query
             + filter_query
@@ -637,7 +641,7 @@ async def node_fulltext_search(
             query,
             query=fuzzy_query,
             limit=limit,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
 
@@ -664,16 +668,16 @@ async def node_similarity_search(
     )
 
     if group_ids is not None:
-        filter_queries.append('n.group_id IN $group_ids')
-        filter_params['group_ids'] = group_ids
+        filter_queries.append("n.group_id IN $group_ids")
+        filter_params["group_ids"] = group_ids
 
-    filter_query = ''
+    filter_query = ""
     if filter_queries:
-        filter_query = ' WHERE ' + (' AND '.join(filter_queries))
+        filter_query = " WHERE " + (" AND ".join(filter_queries))
 
-    search_vector_var = '$search_vector'
+    search_vector_var = "$search_vector"
     if driver.provider == GraphProvider.KUZU:
-        search_vector_var = f'CAST($search_vector AS FLOAT[{len(search_vector)}])'
+        search_vector_var = f"CAST($search_vector AS FLOAT[{len(search_vector)}])"
 
     if driver.provider == GraphProvider.NEPTUNE:
         query = (
@@ -691,19 +695,19 @@ async def node_similarity_search(
             search_vector=search_vector,
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
         )
 
         if len(resp) > 0:
             # Calculate Cosine similarity then return the edge ids
             input_ids = []
             for r in resp:
-                if r['embedding']:
+                if r["embedding"]:
                     score = calculate_cosine_similarity(
-                        search_vector, list(map(float, r['embedding'].split(',')))
+                        search_vector, list(map(float, r["embedding"].split(",")))
                     )
                     if score > min_score:
-                        input_ids.append({'id': r['id'], 'score': score})
+                        input_ids.append({"id": r["id"], "score": score})
 
             # Match the edge ides and return the values
             query = (
@@ -725,7 +729,7 @@ async def node_similarity_search(
                 search_vector=search_vector,
                 limit=limit,
                 min_score=min_score,
-                routing_='r',
+                routing_="r",
                 **filter_params,
             )
         else:
@@ -738,7 +742,9 @@ async def node_similarity_search(
             + filter_query
             + """
             WITH n, """
-            + get_vector_cosine_func_query('n.name_embedding', search_vector_var, driver.provider)
+            + get_vector_cosine_func_query(
+                "n.name_embedding", search_vector_var, driver.provider
+            )
             + """ AS score
             WHERE score > $min_score
             RETURN
@@ -755,7 +761,7 @@ async def node_similarity_search(
             search_vector=search_vector,
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
 
@@ -772,7 +778,11 @@ async def node_bfs_search(
     group_ids: list[str] | None = None,
     limit: int = RELEVANT_SCHEMA_LIMIT,
 ) -> list[EntityNode]:
-    if bfs_origin_node_uuids is None or len(bfs_origin_node_uuids) == 0 or bfs_max_depth < 1:
+    if (
+        bfs_origin_node_uuids is None
+        or len(bfs_origin_node_uuids) == 0
+        or bfs_max_depth < 1
+    ):
         return []
 
     filter_queries, filter_params = node_search_filter_query_constructor(
@@ -780,13 +790,13 @@ async def node_bfs_search(
     )
 
     if group_ids is not None:
-        filter_queries.append('n.group_id IN $group_ids')
-        filter_queries.append('origin.group_id IN $group_ids')
-        filter_params['group_ids'] = group_ids
+        filter_queries.append("n.group_id IN $group_ids")
+        filter_queries.append("origin.group_id IN $group_ids")
+        filter_params["group_ids"] = group_ids
 
-    filter_query = ''
+    filter_query = ""
     if filter_queries:
-        filter_query = ' AND ' + (' AND '.join(filter_queries))
+        filter_query = " AND " + (" AND ".join(filter_queries))
 
     match_queries = [
         f"""
@@ -842,7 +852,7 @@ async def node_bfs_search(
             """,
             bfs_origin_node_uuids=bfs_origin_node_uuids,
             limit=limit,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
         records.extend(sub_records)
@@ -866,21 +876,21 @@ async def episode_fulltext_search(
 
     # BM25 search to get top episodes
     fuzzy_query = fulltext_query(query, group_ids, driver)
-    if fuzzy_query == '':
+    if fuzzy_query == "":
         return []
 
     filter_params: dict[str, Any] = {}
-    group_filter_query: LiteralString = ''
+    group_filter_query: LiteralString = ""
     if group_ids is not None:
-        group_filter_query += '\nAND e.group_id IN $group_ids'
-        filter_params['group_ids'] = group_ids
+        group_filter_query += "\nAND e.group_id IN $group_ids"
+        filter_params["group_ids"] = group_ids
 
     if driver.provider == GraphProvider.NEPTUNE:
-        res = driver.run_aoss_query('episode_content', query, limit=limit)  # pyright: ignore reportAttributeAccessIssue
-        if res['hits']['total']['value'] > 0:
+        res = driver.run_aoss_query("episode_content", query, limit=limit)  # pyright: ignore reportAttributeAccessIssue
+        if res["hits"]["total"]["value"] > 0:
             input_ids = []
-            for r in res['hits']['hits']:
-                input_ids.append({'id': r['_source']['uuid'], 'score': r['_score']})
+            for r in res["hits"]["hits"]:
+                input_ids.append({"id": r["_source"]["uuid"], "score": r["_score"]})
 
             # Match the edge ides and return the values
             query = """
@@ -905,14 +915,16 @@ async def episode_fulltext_search(
                 ids=input_ids,
                 query=fuzzy_query,
                 limit=limit,
-                routing_='r',
+                routing_="r",
                 **filter_params,
             )
         else:
             return []
     else:
         query = (
-            get_nodes_query('episode_content', '$query', limit=limit, provider=driver.provider)
+            get_nodes_query(
+                "episode_content", "$query", limit=limit, provider=driver.provider
+            )
             + """
             YIELD node AS episode, score
             MATCH (e:Episodic)
@@ -930,7 +942,7 @@ async def episode_fulltext_search(
         )
 
         records, _, _ = await driver.execute_query(
-            query, query=fuzzy_query, limit=limit, routing_='r', **filter_params
+            query, query=fuzzy_query, limit=limit, routing_="r", **filter_params
         )
 
     episodes = [get_episodic_node_from_record(record) for record in records]
@@ -946,26 +958,26 @@ async def community_fulltext_search(
 ) -> list[CommunityNode]:
     # BM25 search to get top communities
     fuzzy_query = fulltext_query(query, group_ids, driver)
-    if fuzzy_query == '':
+    if fuzzy_query == "":
         return []
 
     filter_params: dict[str, Any] = {}
-    group_filter_query: LiteralString = ''
+    group_filter_query: LiteralString = ""
     if group_ids is not None:
-        group_filter_query = 'WHERE c.group_id IN $group_ids'
-        filter_params['group_ids'] = group_ids
+        group_filter_query = "WHERE c.group_id IN $group_ids"
+        filter_params["group_ids"] = group_ids
 
-    yield_query = 'YIELD node AS c, score'
+    yield_query = "YIELD node AS c, score"
     if driver.provider == GraphProvider.KUZU:
-        yield_query = 'WITH node AS c, score'
+        yield_query = "WITH node AS c, score"
 
     if driver.provider == GraphProvider.NEPTUNE:
-        res = driver.run_aoss_query('community_name', query, limit=limit)  # pyright: ignore reportAttributeAccessIssue
-        if res['hits']['total']['value'] > 0:
+        res = driver.run_aoss_query("community_name", query, limit=limit)  # pyright: ignore reportAttributeAccessIssue
+        if res["hits"]["total"]["value"] > 0:
             # Calculate Cosine similarity then return the edge ids
             input_ids = []
-            for r in res['hits']['hits']:
-                input_ids.append({'id': r['_source']['uuid'], 'score': r['_score']})
+            for r in res["hits"]["hits"]:
+                input_ids.append({"id": r["_source"]["uuid"], "score": r["_score"]})
 
             # Match the edge ides and return the values
             query = """
@@ -987,14 +999,16 @@ async def community_fulltext_search(
                 ids=input_ids,
                 query=fuzzy_query,
                 limit=limit,
-                routing_='r',
+                routing_="r",
                 **filter_params,
             )
         else:
             return []
     else:
         query = (
-            get_nodes_query('community_name', '$query', limit=limit, provider=driver.provider)
+            get_nodes_query(
+                "community_name", "$query", limit=limit, provider=driver.provider
+            )
             + yield_query
             + """
             WITH c, score
@@ -1011,7 +1025,7 @@ async def community_fulltext_search(
         )
 
         records, _, _ = await driver.execute_query(
-            query, query=fuzzy_query, limit=limit, routing_='r', **filter_params
+            query, query=fuzzy_query, limit=limit, routing_="r", **filter_params
         )
 
     communities = [get_community_node_from_record(record) for record in records]
@@ -1029,10 +1043,10 @@ async def community_similarity_search(
     # vector similarity search over entity names
     query_params: dict[str, Any] = {}
 
-    group_filter_query: LiteralString = ''
+    group_filter_query: LiteralString = ""
     if group_ids is not None:
-        group_filter_query += ' WHERE c.group_id IN $group_ids'
-        query_params['group_ids'] = group_ids
+        group_filter_query += " WHERE c.group_id IN $group_ids"
+        query_params["group_ids"] = group_ids
 
     if driver.provider == GraphProvider.NEPTUNE:
         query = (
@@ -1049,7 +1063,7 @@ async def community_similarity_search(
             search_vector=search_vector,
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **query_params,
         )
 
@@ -1057,12 +1071,12 @@ async def community_similarity_search(
             # Calculate Cosine similarity then return the edge ids
             input_ids = []
             for r in resp:
-                if r['embedding']:
+                if r["embedding"]:
                     score = calculate_cosine_similarity(
-                        search_vector, list(map(float, r['embedding'].split(',')))
+                        search_vector, list(map(float, r["embedding"].split(",")))
                     )
                     if score > min_score:
-                        input_ids.append({'id': r['id'], 'score': score})
+                        input_ids.append({"id": r["id"], "score": score})
 
             # Match the edge ides and return the values
             query = """
@@ -1085,15 +1099,15 @@ async def community_similarity_search(
                 search_vector=search_vector,
                 limit=limit,
                 min_score=min_score,
-                routing_='r',
+                routing_="r",
                 **query_params,
             )
         else:
             return []
     else:
-        search_vector_var = '$search_vector'
+        search_vector_var = "$search_vector"
         if driver.provider == GraphProvider.KUZU:
-            search_vector_var = f'CAST($search_vector AS FLOAT[{len(search_vector)}])'
+            search_vector_var = f"CAST($search_vector AS FLOAT[{len(search_vector)}])"
 
         query = (
             """
@@ -1103,7 +1117,9 @@ async def community_similarity_search(
             + """
             WITH c,
             """
-            + get_vector_cosine_func_query('c.name_embedding', search_vector_var, driver.provider)
+            + get_vector_cosine_func_query(
+                "c.name_embedding", search_vector_var, driver.provider
+            )
             + """ AS score
             WHERE score > $min_score
             RETURN
@@ -1120,7 +1136,7 @@ async def community_similarity_search(
             search_vector=search_vector,
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **query_params,
         )
 
@@ -1199,7 +1215,7 @@ async def hybrid_node_search(
     relevant_nodes: list[EntityNode] = [node_uuid_map[uuid] for uuid in ranked_uuids]
 
     end = time()
-    logger.debug(f'Found relevant nodes: {ranked_uuids} in {(end - start) * 1000} ms')
+    logger.debug(f"Found relevant nodes: {ranked_uuids} in {(end - start) * 1000} ms")
     return relevant_nodes
 
 
@@ -1216,10 +1232,10 @@ async def get_relevant_nodes(
     group_id = nodes[0].group_id
     query_nodes = [
         {
-            'uuid': node.uuid,
-            'name': node.name,
-            'name_embedding': node.name_embedding,
-            'fulltext_query': fulltext_query(node.name, [node.group_id], driver),
+            "uuid": node.uuid,
+            "name": node.name,
+            "name_embedding": node.name_embedding,
+            "fulltext_query": fulltext_query(node.name, [node.group_id], driver),
         }
         for node in nodes
     ]
@@ -1228,12 +1244,14 @@ async def get_relevant_nodes(
         search_filter, driver.provider
     )
 
-    filter_query = ''
+    filter_query = ""
     if filter_queries:
-        filter_query = 'WHERE ' + (' AND '.join(filter_queries))
+        filter_query = "WHERE " + (" AND ".join(filter_queries))
 
     if driver.provider == GraphProvider.KUZU:
-        embedding_size = len(nodes[0].name_embedding) if nodes[0].name_embedding is not None else 0
+        embedding_size = (
+            len(nodes[0].name_embedding) if nodes[0].name_embedding is not None else 0
+        )
         if embedding_size == 0:
             return []
 
@@ -1247,8 +1265,8 @@ async def get_relevant_nodes(
             + """
             WITH node, n, """
             + get_vector_cosine_func_query(
-                'n.name_embedding',
-                f'CAST(node.name_embedding AS FLOAT[{embedding_size}])',
+                "n.name_embedding",
+                f"CAST(node.name_embedding AS FLOAT[{embedding_size}])",
                 driver.provider,
             )
             + """ AS score
@@ -1256,8 +1274,8 @@ async def get_relevant_nodes(
             WITH node, collect(n)[:$limit] AS top_vector_nodes, collect(n.uuid) AS vector_node_uuids
             """
             + get_nodes_query(
-                'node_name_and_summary',
-                'node.fulltext_query',
+                "node_name_and_summary",
+                "node.fulltext_query",
                 limit=limit,
                 provider=driver.provider,
             )
@@ -1294,15 +1312,15 @@ async def get_relevant_nodes(
             + """
             WITH node, n, """
             + get_vector_cosine_func_query(
-                'n.name_embedding', 'node.name_embedding', driver.provider
+                "n.name_embedding", "node.name_embedding", driver.provider
             )
             + """ AS score
             WHERE score > $min_score
             WITH node, collect(n)[..$limit] AS top_vector_nodes, collect(n.uuid) AS vector_node_uuids
             """
             + get_nodes_query(
-                'node_name_and_summary',
-                'node.fulltext_query',
+                "node_name_and_summary",
+                "node.fulltext_query",
                 limit=limit,
                 provider=driver.provider,
             )
@@ -1341,13 +1359,14 @@ async def get_relevant_nodes(
         group_id=group_id,
         limit=limit,
         min_score=min_score,
-        routing_='r',
+        routing_="r",
         **filter_params,
     )
 
     relevant_nodes_dict: dict[str, list[EntityNode]] = {
-        result['search_node_uuid']: [
-            get_entity_node_from_record(record, driver.provider) for record in result['matches']
+        result["search_node_uuid"]: [
+            get_entity_node_from_record(record, driver.provider)
+            for record in result["matches"]
         ]
         for result in results
     }
@@ -1371,9 +1390,9 @@ async def get_relevant_edges(
         search_filter, driver.provider
     )
 
-    filter_query = ''
+    filter_query = ""
     if filter_queries:
-        filter_query = ' WHERE ' + (' AND '.join(filter_queries))
+        filter_query = " WHERE " + (" AND ".join(filter_queries))
 
     if driver.provider == GraphProvider.NEPTUNE:
         query = (
@@ -1393,7 +1412,7 @@ async def get_relevant_edges(
             edges=[edge.model_dump() for edge in edges],
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
 
@@ -1401,10 +1420,13 @@ async def get_relevant_edges(
         input_ids = []
         for r in resp:
             score = calculate_cosine_similarity(
-                list(map(float, r['source_embedding'].split(','))), r['target_embedding']
+                list(map(float, r["source_embedding"].split(","))),
+                r["target_embedding"],
             )
             if score > min_score:
-                input_ids.append({'id': r['id'], 'score': score, 'uuid': r['search_edge_uuid']})
+                input_ids.append(
+                    {"id": r["id"], "score": score, "uuid": r["search_edge_uuid"]}
+                )
 
         # Match the edge ides and return the values
         query = """
@@ -1437,13 +1459,15 @@ async def get_relevant_edges(
             edges=[edge.model_dump() for edge in edges],
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
     else:
         if driver.provider == GraphProvider.KUZU:
             embedding_size = (
-                len(edges[0].fact_embedding) if edges[0].fact_embedding is not None else 0
+                len(edges[0].fact_embedding)
+                if edges[0].fact_embedding is not None
+                else 0
             )
             if embedding_size == 0:
                 return []
@@ -1457,8 +1481,8 @@ async def get_relevant_edges(
                 + """
                 WITH e, edge, n, m, """
                 + get_vector_cosine_func_query(
-                    'e.fact_embedding',
-                    f'CAST(edge.fact_embedding AS FLOAT[{embedding_size}])',
+                    "e.fact_embedding",
+                    f"CAST(edge.fact_embedding AS FLOAT[{embedding_size}])",
                     driver.provider,
                 )
                 + """ AS score
@@ -1495,7 +1519,7 @@ async def get_relevant_edges(
                 + """
                 WITH e, edge, """
                 + get_vector_cosine_func_query(
-                    'e.fact_embedding', 'edge.fact_embedding', driver.provider
+                    "e.fact_embedding", "edge.fact_embedding", driver.provider
                 )
                 + """ AS score
                 WHERE score > $min_score
@@ -1526,13 +1550,14 @@ async def get_relevant_edges(
             edges=[edge.model_dump() for edge in edges],
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
 
     relevant_edges_dict: dict[str, list[EntityEdge]] = {
-        result['search_edge_uuid']: [
-            get_entity_edge_from_record(record, driver.provider) for record in result['matches']
+        result["search_edge_uuid"]: [
+            get_entity_edge_from_record(record, driver.provider)
+            for record in result["matches"]
         ]
         for result in results
     }
@@ -1556,9 +1581,9 @@ async def get_edge_invalidation_candidates(
         search_filter, driver.provider
     )
 
-    filter_query = ''
+    filter_query = ""
     if filter_queries:
-        filter_query = ' AND ' + (' AND '.join(filter_queries))
+        filter_query = " AND " + (" AND ".join(filter_queries))
 
     if driver.provider == GraphProvider.NEPTUNE:
         query = (
@@ -1580,7 +1605,7 @@ async def get_edge_invalidation_candidates(
             edges=[edge.model_dump() for edge in edges],
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
 
@@ -1588,10 +1613,13 @@ async def get_edge_invalidation_candidates(
         input_ids = []
         for r in resp:
             score = calculate_cosine_similarity(
-                list(map(float, r['source_embedding'].split(','))), r['target_embedding']
+                list(map(float, r["source_embedding"].split(","))),
+                r["target_embedding"],
             )
             if score > min_score:
-                input_ids.append({'id': r['id'], 'score': score, 'uuid': r['search_edge_uuid']})
+                input_ids.append(
+                    {"id": r["id"], "score": score, "uuid": r["search_edge_uuid"]}
+                )
 
         # Match the edge ides and return the values
         query = """
@@ -1623,13 +1651,15 @@ async def get_edge_invalidation_candidates(
             edges=[edge.model_dump() for edge in edges],
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
     else:
         if driver.provider == GraphProvider.KUZU:
             embedding_size = (
-                len(edges[0].fact_embedding) if edges[0].fact_embedding is not None else 0
+                len(edges[0].fact_embedding)
+                if edges[0].fact_embedding is not None
+                else 0
             )
             if embedding_size == 0:
                 return []
@@ -1644,8 +1674,8 @@ async def get_edge_invalidation_candidates(
                 + """
                 WITH edge, e, n, m, """
                 + get_vector_cosine_func_query(
-                    'e.fact_embedding',
-                    f'CAST(edge.fact_embedding AS FLOAT[{embedding_size}])',
+                    "e.fact_embedding",
+                    f"CAST(edge.fact_embedding AS FLOAT[{embedding_size}])",
                     driver.provider,
                 )
                 + """ AS score
@@ -1683,7 +1713,7 @@ async def get_edge_invalidation_candidates(
                 + """
                 WITH edge, e, """
                 + get_vector_cosine_func_query(
-                    'e.fact_embedding', 'edge.fact_embedding', driver.provider
+                    "e.fact_embedding", "edge.fact_embedding", driver.provider
                 )
                 + """ AS score
                 WHERE score > $min_score
@@ -1714,12 +1744,13 @@ async def get_edge_invalidation_candidates(
             edges=[edge.model_dump() for edge in edges],
             limit=limit,
             min_score=min_score,
-            routing_='r',
+            routing_="r",
             **filter_params,
         )
     invalidation_edges_dict: dict[str, list[EntityEdge]] = {
-        result['search_edge_uuid']: [
-            get_entity_edge_from_record(record, driver.provider) for record in result['matches']
+        result["search_edge_uuid"]: [
+            get_entity_edge_from_record(record, driver.provider)
+            for record in result["matches"]
         ]
         for result in results
     }
@@ -1755,7 +1786,9 @@ async def node_distance_reranker(
     min_score: float = 0,
 ) -> tuple[list[str], list[float]]:
     # filter out node_uuid center node node uuid
-    filtered_uuids = list(filter(lambda node_uuid: node_uuid != center_node_uuid, node_uuids))
+    filtered_uuids = list(
+        filter(lambda node_uuid: node_uuid != center_node_uuid, node_uuids)
+    )
     scores: dict[str, float] = {center_node_uuid: 0.0}
 
     query = """
@@ -1775,19 +1808,19 @@ async def node_distance_reranker(
         query,
         node_uuids=filtered_uuids,
         center_uuid=center_node_uuid,
-        routing_='r',
+        routing_="r",
     )
     if driver.provider == GraphProvider.FALKORDB:
         results = [dict(zip(header, row, strict=True)) for row in results]
 
     for result in results:
-        uuid = result['uuid']
-        score = result['score']
+        uuid = result["uuid"]
+        score = result["score"]
         scores[uuid] = score
 
     for uuid in filtered_uuids:
         if uuid not in scores:
-            scores[uuid] = float('inf')
+            scores[uuid] = float("inf")
 
     # rerank on shortest distance
     filtered_uuids.sort(key=lambda cur_uuid: scores[cur_uuid])
@@ -1817,15 +1850,15 @@ async def episode_mentions_reranker(
         RETURN count(*) AS score, n.uuid AS uuid
         """,
         node_uuids=sorted_uuids,
-        routing_='r',
+        routing_="r",
     )
 
     for result in results:
-        scores[result['uuid']] = result['score']
+        scores[result["uuid"]] = result["score"]
 
     for uuid in sorted_uuids:
         if uuid not in scores:
-            scores[uuid] = float('inf')
+            scores[uuid] = float("inf")
 
     # rerank on shortest distance
     sorted_uuids.sort(key=lambda cur_uuid: scores[cur_uuid])
@@ -1863,13 +1896,16 @@ def maximal_marginal_relevance(
     mmr_scores: dict[str, float] = {}
     for i, uuid in enumerate(uuids):
         max_sim = np.max(similarity_matrix[i, :])
-        mmr = mmr_lambda * np.dot(query_array, candidate_arrays[uuid]) + (mmr_lambda - 1) * max_sim
+        mmr = (
+            mmr_lambda * np.dot(query_array, candidate_arrays[uuid])
+            + (mmr_lambda - 1) * max_sim
+        )
         mmr_scores[uuid] = mmr
 
     uuids.sort(reverse=True, key=lambda c: mmr_scores[c])
 
     end = time()
-    logger.debug(f'Completed MMR reranking in {(end - start) * 1000} ms')
+    logger.debug(f"Completed MMR reranking in {(end - start) * 1000} ms")
 
     return [uuid for uuid in uuids if mmr_scores[uuid] >= min_score], [
         mmr_scores[uuid] for uuid in uuids if mmr_scores[uuid] >= min_score
@@ -1898,13 +1934,13 @@ async def get_embeddings_for_nodes(
     results, _, _ = await driver.execute_query(
         query,
         node_uuids=[node.uuid for node in nodes],
-        routing_='r',
+        routing_="r",
     )
 
     embeddings_dict: dict[str, list[float]] = {}
     for result in results:
-        uuid: str = result.get('uuid')
-        embedding: list[float] = result.get('name_embedding')
+        uuid: str = result.get("uuid")
+        embedding: list[float] = result.get("name_embedding")
         if uuid is not None and embedding is not None:
             embeddings_dict[uuid] = embedding
 
@@ -1933,13 +1969,13 @@ async def get_embeddings_for_communities(
     results, _, _ = await driver.execute_query(
         query,
         community_uuids=[community.uuid for community in communities],
-        routing_='r',
+        routing_="r",
     )
 
     embeddings_dict: dict[str, list[float]] = {}
     for result in results:
-        uuid: str = result.get('uuid')
-        embedding: list[float] = result.get('name_embedding')
+        uuid: str = result.get("uuid")
+        embedding: list[float] = result.get("name_embedding")
         if uuid is not None and embedding is not None:
             embeddings_dict[uuid] = embedding
 
@@ -1978,13 +2014,13 @@ async def get_embeddings_for_edges(
     results, _, _ = await driver.execute_query(
         query,
         edge_uuids=[edge.uuid for edge in edges],
-        routing_='r',
+        routing_="r",
     )
 
     embeddings_dict: dict[str, list[float]] = {}
     for result in results:
-        uuid: str = result.get('uuid')
-        embedding: list[float] = result.get('fact_embedding')
+        uuid: str = result.get("uuid")
+        embedding: list[float] = result.get("fact_embedding")
         if uuid is not None and embedding is not None:
             embeddings_dict[uuid] = embedding
 

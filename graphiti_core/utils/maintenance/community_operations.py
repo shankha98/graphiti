@@ -45,7 +45,7 @@ async def get_community_clusters(
             """
         )
 
-        group_ids = group_id_values[0]['group_ids'] if group_id_values else []
+        group_ids = group_id_values[0]["group_ids"] if group_id_values else []
 
     for group_id in group_ids:
         projection: dict[str, list[Neighbor]] = {}
@@ -71,7 +71,8 @@ async def get_community_clusters(
             )
 
             projection[node.uuid] = [
-                Neighbor(node_uuid=record['uuid'], edge_count=record['count']) for record in records
+                Neighbor(node_uuid=record["uuid"], edge_count=record["count"])
+                for record in records
             ]
 
         cluster_uuids = label_propagation(projection)
@@ -79,7 +80,10 @@ async def get_community_clusters(
         community_clusters.extend(
             list(
                 await semaphore_gather(
-                    *[EntityNode.get_by_uuids(driver, cluster) for cluster in cluster_uuids]
+                    *[
+                        EntityNode.get_by_uuids(driver, cluster)
+                        for cluster in cluster_uuids
+                    ]
                 )
             )
         )
@@ -105,13 +109,17 @@ def label_propagation(projection: dict[str, list[Neighbor]]) -> list[list[str]]:
 
             community_candidates: dict[int, int] = defaultdict(int)
             for neighbor in neighbors:
-                community_candidates[community_map[neighbor.node_uuid]] += neighbor.edge_count
+                community_candidates[community_map[neighbor.node_uuid]] += (
+                    neighbor.edge_count
+                )
             community_lst = [
                 (count, community) for community, count in community_candidates.items()
             ]
 
             community_lst.sort(reverse=True)
-            candidate_rank, community_candidate = community_lst[0] if community_lst else (0, -1)
+            candidate_rank, community_candidate = (
+                community_lst[0] if community_lst else (0, -1)
+            )
             if community_candidate != -1 and candidate_rank > 1:
                 new_community = community_candidate
             else:
@@ -138,32 +146,32 @@ def label_propagation(projection: dict[str, list[Neighbor]]) -> list[list[str]]:
 async def summarize_pair(llm_client: LLMClient, summary_pair: tuple[str, str]) -> str:
     # Prepare context for LLM
     context = {
-        'node_summaries': [{'summary': summary} for summary in summary_pair],
+        "node_summaries": [{"summary": summary} for summary in summary_pair],
     }
 
     llm_response = await llm_client.generate_response(
         prompt_library.summarize_nodes.summarize_pair(context),
         response_model=Summary,
-        prompt_name='summarize_nodes.summarize_pair',
+        prompt_name="summarize_nodes.summarize_pair",
     )
 
-    pair_summary = llm_response.get('summary', '')
+    pair_summary = llm_response.get("summary", "")
 
     return pair_summary
 
 
 async def generate_summary_description(llm_client: LLMClient, summary: str) -> str:
     context = {
-        'summary': summary,
+        "summary": summary,
     }
 
     llm_response = await llm_client.generate_response(
         prompt_library.summarize_nodes.summary_description(context),
         response_model=SummaryDescription,
-        prompt_name='summarize_nodes.summary_description',
+        prompt_name="summarize_nodes.summary_description",
     )
 
-    description = llm_response.get('description', '')
+    description = llm_response.get("description", "")
 
     return description
 
@@ -183,7 +191,9 @@ async def build_community(
                 *[
                     summarize_pair(llm_client, (str(left_summary), str(right_summary)))
                     for left_summary, right_summary in zip(
-                        summaries[: int(length / 2)], summaries[int(length / 2) :], strict=False
+                        summaries[: int(length / 2)],
+                        summaries[int(length / 2) :],
+                        strict=False,
                     )
                 ]
             )
@@ -199,7 +209,7 @@ async def build_community(
     community_node = CommunityNode(
         name=name,
         group_id=community_cluster[0].group_id,
-        labels=['Community'],
+        labels=["Community"],
         created_at=now,
         summary=summary,
     )

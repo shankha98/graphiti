@@ -31,12 +31,12 @@ class TestRateLimitError:
     def test_default_message(self):
         """Test that the default message is set correctly."""
         error = RateLimitError()
-        assert error.message == 'Rate limit exceeded. Please try again later.'
-        assert str(error) == 'Rate limit exceeded. Please try again later.'
+        assert error.message == "Rate limit exceeded. Please try again later."
+        assert str(error) == "Rate limit exceeded. Please try again later."
 
     def test_custom_message(self):
         """Test that a custom message can be set."""
-        custom_message = 'Custom rate limit message'
+        custom_message = "Custom rate limit message"
         error = RateLimitError(custom_message)
         assert error.message == custom_message
         assert str(error) == custom_message
@@ -53,7 +53,7 @@ class TestRefusalError:
 
     def test_message_assignment(self):
         """Test that the message is assigned correctly."""
-        message = 'The LLM refused to respond to this prompt.'
+        message = "The LLM refused to respond to this prompt."
         error = RefusalError(message=message)  # Add explicit keyword argument
         assert error.message == message
         assert str(error) == message
@@ -70,11 +70,11 @@ class TestEmptyResponseError:
 
     def test_message_assignment(self):
         """Test that the message is assigned correctly."""
-        message = 'The LLM returned an empty response.'
+        message = "The LLM returned an empty response."
         error = EmptyResponseError(message=message)  # Add explicit keyword argument
         assert error.message == message
         assert str(error) == message
 
 
-if __name__ == '__main__':
-    pytest.main(['-v', 'test_errors.py'])
+if __name__ == "__main__":
+    pytest.main(["-v", "test_errors.py"])

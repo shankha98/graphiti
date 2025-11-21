@@ -30,7 +30,7 @@ from graphiti_core.utils.datetime_utils import utc_now
 from tests.helpers_test import GraphProvider
 
 pytestmark = pytest.mark.integration
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)
 
 
 def setup_logging():
@@ -43,7 +43,9 @@ def setup_logging():
     console_handler.setLevel(logging.INFO)
 
     # Create formatter
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     # Add formatter to console handler
     console_handler.setFormatter(formatter)
@@ -57,7 +59,7 @@ def setup_logging():
 @pytest.mark.asyncio
 async def test_graphiti_init(graph_driver):
     if graph_driver.provider == GraphProvider.FALKORDB:
-        pytest.skip('Skipping as tests fail on Falkordb')
+        pytest.skip("Skipping as tests fail on Falkordb")
 
     logger = setup_logging()
     graphiti = Graphiti(graph_driver=graph_driver)
@@ -65,16 +67,20 @@ async def test_graphiti_init(graph_driver):
     await graphiti.build_indices_and_constraints()
 
     search_filter = SearchFilters(
-        node_labels=['Person', 'City'],
+        node_labels=["Person", "City"],
         created_at=[
             [DateFilter(date=None, comparison_operator=ComparisonOperator.is_null)],
-            [DateFilter(date=utc_now(), comparison_operator=ComparisonOperator.less_than)],
+            [
+                DateFilter(
+                    date=utc_now(), comparison_operator=ComparisonOperator.less_than
+                )
+            ],
             [DateFilter(date=None, comparison_operator=ComparisonOperator.is_not_null)],
         ],
     )
 
     results = await graphiti.search_(
-        query='Who is Tania',
+        query="Who is Tania",
         search_filter=search_filter,
     )
 

@@ -36,7 +36,7 @@ from .config import DEFAULT_MAX_TOKENS, LLMConfig, ModelSize
 from .errors import RateLimitError
 
 DEFAULT_TEMPERATURE = 0
-DEFAULT_CACHE_DIR = './llm_cache'
+DEFAULT_CACHE_DIR = "./llm_cache"
 
 
 def get_extraction_language_instruction(group_id: str | None = None) -> str:
@@ -53,7 +53,7 @@ def get_extraction_language_instruction(group_id: str | None = None) -> str:
     Returns:
         str: Language instruction to append to system messages
     """
-    return '\n\nAny extracted information should be returned in the same language as it was written in.'
+    return "\n\nAny extracted information should be returned in the same language as it was written in."
 
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,8 @@ def is_server_or_retry_error(exception):
         return True
 
     return (
-        isinstance(exception, httpx.HTTPStatusError) and 500 <= exception.response.status_code < 600
+        isinstance(exception, httpx.HTTPStatusError)
+        and 500 <= exception.response.status_code < 600
     )
 
 
@@ -100,15 +101,17 @@ class LLMClient(ABC):
             Cleaned string safe for LLM processing
         """
         # Clean any invalid Unicode
-        cleaned = input.encode('utf-8', errors='ignore').decode('utf-8')
+        cleaned = input.encode("utf-8", errors="ignore").decode("utf-8")
 
         # Remove zero-width characters and other invisible unicode
-        zero_width = '\u200b\u200c\u200d\ufeff\u2060'
+        zero_width = "\u200b\u200c\u200d\ufeff\u2060"
         for char in zero_width:
-            cleaned = cleaned.replace(char, '')
+            cleaned = cleaned.replace(char, "")
 
         # Remove control characters except newlines, returns, and tabs
-        cleaned = ''.join(char for char in cleaned if ord(char) >= 32 or char in '\n\r\t')
+        cleaned = "".join(
+            char for char in cleaned if ord(char) >= 32 or char in "\n\r\t"
+        )
 
         return cleaned
 
@@ -117,7 +120,7 @@ class LLMClient(ABC):
         wait=wait_random_exponential(multiplier=10, min=5, max=120),
         retry=retry_if_exception(is_server_or_retry_error),
         after=lambda retry_state: logger.warning(
-            f'Retrying {retry_state.fn.__name__ if retry_state.fn else "function"} after {retry_state.attempt_number} attempts...'
+            f"Retrying {retry_state.fn.__name__ if retry_state.fn else 'function'} after {retry_state.attempt_number} attempts..."
         )
         if retry_state.attempt_number > 1
         else None,
@@ -131,7 +134,9 @@ class LLMClient(ABC):
         model_size: ModelSize = ModelSize.medium,
     ) -> dict[str, typing.Any]:
         try:
-            return await self._generate_response(messages, response_model, max_tokens, model_size)
+            return await self._generate_response(
+                messages, response_model, max_tokens, model_size
+            )
         except (httpx.HTTPStatusError, RateLimitError) as e:
             raise e
 
@@ -148,7 +153,7 @@ class LLMClient(ABC):
     def _get_cache_key(self, messages: list[Message]) -> str:
         # Create a unique cache key based on the messages and model
         message_str = json.dumps([m.model_dump() for m in messages], sort_keys=True)
-        key_str = f'{self.model}:{message_str}'
+        key_str = f"{self.model}:{message_str}"
         return hashlib.md5(key_str.encode()).hexdigest()
 
     async def generate_response(
@@ -167,9 +172,7 @@ class LLMClient(ABC):
             serialized_model = json.dumps(response_model.model_json_schema())
             messages[
                 -1
-            ].content += (
-                f'\n\nRespond with a JSON object in the following format:\n\n{serialized_model}'
-            )
+            ].content += f"\n\nRespond with a JSON object in the following format:\n\n{serialized_model}"
 
         # Add multilingual extraction instructions
         messages[0].content += get_extraction_language_instruction(group_id)
@@ -178,15 +181,15 @@ class LLMClient(ABC):
             message.content = self._clean_input(message.content)
 
         # Wrap entire operation in tracing span
-        with self.tracer.start_span('llm.generate') as span:
+        with self.tracer.start_span("llm.generate") as span:
             attributes = {
-                'llm.provider': self._get_provider_type(),
-                'model.size': model_size.value,
-                'max_tokens': max_tokens,
-                'cache.enabled': self.cache_enabled,
+                "llm.provider": self._get_provider_type(),
+                "model.size": model_size.value,
+                "max_tokens": max_tokens,
+                "cache.enabled": self.cache_enabled,
             }
             if prompt_name:
-                attributes['prompt.name'] = prompt_name
+                attributes["prompt.name"] = prompt_name
             span.add_attributes(attributes)
 
             # Check cache first
@@ -194,11 +197,11 @@ class LLMClient(ABC):
                 cache_key = self._get_cache_key(messages)
                 cached_response = self.cache_dir.get(cache_key)
                 if cached_response is not None:
-                    logger.debug(f'Cache hit for {cache_key}')
-                    span.add_attributes({'cache.hit': True})
+                    logger.debug(f"Cache hit for {cache_key}")
+                    span.add_attributes({"cache.hit": True})
                     return cached_response
 
-            span.add_attributes({'cache.hit': False})
+            span.add_attributes({"cache.hit": False})
 
             # Execute LLM call
             try:
@@ -206,7 +209,7 @@ class LLMClient(ABC):
                     messages, response_model, max_tokens, model_size
                 )
             except Exception as e:
-                span.set_status('error', str(e))
+                span.set_status("error", str(e))
                 span.record_exception(e)
                 raise
 
@@ -220,28 +223,32 @@ class LLMClient(ABC):
     def _get_provider_type(self) -> str:
         """Get provider type from class name."""
         class_name = self.__class__.__name__.lower()
-        if 'openai' in class_name:
-            return 'openai'
-        elif 'anthropic' in class_name:
-            return 'anthropic'
-        elif 'gemini' in class_name:
-            return 'gemini'
-        elif 'groq' in class_name:
-            return 'groq'
+        if "openai" in class_name:
+            return "openai"
+        elif "anthropic" in class_name:
+            return "anthropic"
+        elif "gemini" in class_name:
+            return "gemini"
+        elif "groq" in class_name:
+            return "groq"
         else:
-            return 'unknown'
+            return "unknown"
 
-    def _get_failed_generation_log(self, messages: list[Message], output: str | None) -> str:
+    def _get_failed_generation_log(
+        self, messages: list[Message], output: str | None
+    ) -> str:
         """
         Log the full input messages, the raw output (if any), and the exception for debugging failed generations.
         """
-        log = ''
-        log += f'Input messages: {json.dumps([m.model_dump() for m in messages], indent=2)}\n'
+        log = ""
+        log += f"Input messages: {json.dumps([m.model_dump() for m in messages], indent=2)}\n"
         if output is not None:
             if len(output) > 4000:
-                log += f'Raw output: {output[:2000]}... (truncated) ...{output[-2000:]}\n'
+                log += (
+                    f"Raw output: {output[:2000]}... (truncated) ...{output[-2000:]}\n"
+                )
             else:
-                log += f'Raw output: {output}\n'
+                log += f"Raw output: {output}\n"
         else:
-            log += 'No raw output available'
+            log += "No raw output available"
         return log

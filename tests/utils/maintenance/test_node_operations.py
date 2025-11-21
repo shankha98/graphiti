@@ -41,23 +41,25 @@ def _make_clients():
     llm_generate = AsyncMock()
     llm_client.generate_response = llm_generate
 
-    clients = GraphitiClients.model_construct(  # bypass validation to allow test doubles
-        driver=driver,
-        embedder=embedder,
-        cross_encoder=cross_encoder,
-        llm_client=llm_client,
+    clients = (
+        GraphitiClients.model_construct(  # bypass validation to allow test doubles
+            driver=driver,
+            embedder=embedder,
+            cross_encoder=cross_encoder,
+            llm_client=llm_client,
+        )
     )
 
     return clients, llm_generate
 
 
-def _make_episode(group_id: str = 'group'):
+def _make_episode(group_id: str = "group"):
     return EpisodicNode(
-        name='episode',
+        name="episode",
         group_id=group_id,
         source=EpisodeType.message,
-        source_description='test',
-        content='content',
+        source_description="test",
+        content="content",
         valid_at=utc_now(),
     )
 
@@ -66,18 +68,18 @@ def _make_episode(group_id: str = 'group'):
 async def test_resolve_nodes_exact_match_skips_llm(monkeypatch):
     clients, llm_generate = _make_clients()
 
-    candidate = EntityNode(name='Joe Michaels', group_id='group', labels=['Entity'])
-    extracted = EntityNode(name='Joe Michaels', group_id='group', labels=['Entity'])
+    candidate = EntityNode(name="Joe Michaels", group_id="group", labels=["Entity"])
+    extracted = EntityNode(name="Joe Michaels", group_id="group", labels=["Entity"])
 
     async def fake_search(*_, **__):
         return SearchResults(nodes=[candidate])
 
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.search',
+        "graphiti_core.utils.maintenance.node_operations.search",
         fake_search,
     )
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.filter_existing_duplicate_of_edges',
+        "graphiti_core.utils.maintenance.node_operations.filter_existing_duplicate_of_edges",
         AsyncMock(return_value=[]),
     )
 
@@ -97,27 +99,27 @@ async def test_resolve_nodes_exact_match_skips_llm(monkeypatch):
 async def test_resolve_nodes_low_entropy_uses_llm(monkeypatch):
     clients, llm_generate = _make_clients()
     llm_generate.return_value = {
-        'entity_resolutions': [
+        "entity_resolutions": [
             {
-                'id': 0,
-                'duplicate_idx': -1,
-                'name': 'Joe',
-                'duplicates': [],
+                "id": 0,
+                "duplicate_idx": -1,
+                "name": "Joe",
+                "duplicates": [],
             }
         ]
     }
 
-    extracted = EntityNode(name='Joe', group_id='group', labels=['Entity'])
+    extracted = EntityNode(name="Joe", group_id="group", labels=["Entity"])
 
     async def fake_search(*_, **__):
         return SearchResults(nodes=[])
 
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.search',
+        "graphiti_core.utils.maintenance.node_operations.search",
         fake_search,
     )
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.filter_existing_duplicate_of_edges',
+        "graphiti_core.utils.maintenance.node_operations.filter_existing_duplicate_of_edges",
         AsyncMock(return_value=[]),
     )
 
@@ -137,18 +139,18 @@ async def test_resolve_nodes_low_entropy_uses_llm(monkeypatch):
 async def test_resolve_nodes_fuzzy_match(monkeypatch):
     clients, llm_generate = _make_clients()
 
-    candidate = EntityNode(name='Joe-Michaels', group_id='group', labels=['Entity'])
-    extracted = EntityNode(name='Joe Michaels', group_id='group', labels=['Entity'])
+    candidate = EntityNode(name="Joe-Michaels", group_id="group", labels=["Entity"])
+    extracted = EntityNode(name="Joe Michaels", group_id="group", labels=["Entity"])
 
     async def fake_search(*_, **__):
         return SearchResults(nodes=[candidate])
 
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.search',
+        "graphiti_core.utils.maintenance.node_operations.search",
         fake_search,
     )
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.filter_existing_duplicate_of_edges',
+        "graphiti_core.utils.maintenance.node_operations.filter_existing_duplicate_of_edges",
         AsyncMock(return_value=[]),
     )
 
@@ -168,18 +170,18 @@ async def test_resolve_nodes_fuzzy_match(monkeypatch):
 async def test_collect_candidate_nodes_dedupes_and_merges_override(monkeypatch):
     clients, _ = _make_clients()
 
-    candidate = EntityNode(name='Alice', group_id='group', labels=['Entity'])
+    candidate = EntityNode(name="Alice", group_id="group", labels=["Entity"])
     override_duplicate = EntityNode(
         uuid=candidate.uuid,
-        name='Alice Alt',
-        group_id='group',
-        labels=['Entity'],
+        name="Alice Alt",
+        group_id="group",
+        labels=["Entity"],
     )
-    extracted = EntityNode(name='Alice', group_id='group', labels=['Entity'])
+    extracted = EntityNode(name="Alice", group_id="group", labels=["Entity"])
 
     search_mock = AsyncMock(return_value=SearchResults(nodes=[candidate]))
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.search',
+        "graphiti_core.utils.maintenance.node_operations.search",
         search_mock,
     )
 
@@ -195,7 +197,7 @@ async def test_collect_candidate_nodes_dedupes_and_merges_override(monkeypatch):
 
 
 def test_build_candidate_indexes_populates_structures():
-    candidate = EntityNode(name='Bob Dylan', group_id='group', labels=['Entity'])
+    candidate = EntityNode(name="Bob Dylan", group_id="group", labels=["Entity"])
 
     indexes = _build_candidate_indexes([candidate])
 
@@ -207,30 +209,30 @@ def test_build_candidate_indexes_populates_structures():
 
 
 def test_normalize_helpers():
-    assert _normalize_string_exact('  Alice   Smith ') == 'alice smith'
-    assert _normalize_name_for_fuzzy('Alice-Smith!') == 'alice smith'
+    assert _normalize_string_exact("  Alice   Smith ") == "alice smith"
+    assert _normalize_name_for_fuzzy("Alice-Smith!") == "alice smith"
 
 
 def test_name_entropy_variants():
-    assert _name_entropy('alice') > _name_entropy('aaaaa')
-    assert _name_entropy('') == 0.0
+    assert _name_entropy("alice") > _name_entropy("aaaaa")
+    assert _name_entropy("") == 0.0
 
 
 def test_has_high_entropy_rules():
-    assert _has_high_entropy('meaningful name') is True
-    assert _has_high_entropy('aa') is False
+    assert _has_high_entropy("meaningful name") is True
+    assert _has_high_entropy("aa") is False
 
 
 def test_shingles_and_cache():
-    raw = 'alice'
+    raw = "alice"
     shingle_set = _shingles(raw)
-    assert shingle_set == {'ali', 'lic', 'ice'}
+    assert shingle_set == {"ali", "lic", "ice"}
     assert _cached_shingles(raw) == shingle_set
     assert _cached_shingles(raw) is _cached_shingles(raw)
 
 
 def test_hash_minhash_and_lsh():
-    shingles = {'abc', 'bcd', 'cde'}
+    shingles = {"abc", "bcd", "cde"}
     signature = _minhash_signature(shingles)
     assert len(signature) == 32
     bands = _lsh_bands(signature)
@@ -240,19 +242,21 @@ def test_hash_minhash_and_lsh():
 
 
 def test_jaccard_similarity_edges():
-    a = {'a', 'b'}
-    b = {'a', 'c'}
+    a = {"a", "b"}
+    b = {"a", "c"}
     assert _jaccard_similarity(a, b) == pytest.approx(1 / 3)
     assert _jaccard_similarity(set(), set()) == 1.0
     assert _jaccard_similarity(a, set()) == 0.0
 
 
 def test_resolve_with_similarity_exact_match_updates_state():
-    candidate = EntityNode(name='Charlie Parker', group_id='group', labels=['Entity'])
-    extracted = EntityNode(name='Charlie Parker', group_id='group', labels=['Entity'])
+    candidate = EntityNode(name="Charlie Parker", group_id="group", labels=["Entity"])
+    extracted = EntityNode(name="Charlie Parker", group_id="group", labels=["Entity"])
 
     indexes = _build_candidate_indexes([candidate])
-    state = DedupResolutionState(resolved_nodes=[None], uuid_map={}, unresolved_indices=[])
+    state = DedupResolutionState(
+        resolved_nodes=[None], uuid_map={}, unresolved_indices=[]
+    )
 
     _resolve_with_similarity([extracted], indexes, state)
 
@@ -263,7 +267,7 @@ def test_resolve_with_similarity_exact_match_updates_state():
 
 
 def test_resolve_with_similarity_low_entropy_defers_resolution():
-    extracted = EntityNode(name='Bob', group_id='group', labels=['Entity'])
+    extracted = EntityNode(name="Bob", group_id="group", labels=["Entity"])
     indexes = DedupCandidateIndexes(
         existing_nodes=[],
         nodes_by_uuid={},
@@ -271,7 +275,9 @@ def test_resolve_with_similarity_low_entropy_defers_resolution():
         shingles_by_candidate={},
         lsh_buckets=defaultdict(list),
     )
-    state = DedupResolutionState(resolved_nodes=[None], uuid_map={}, unresolved_indices=[])
+    state = DedupResolutionState(
+        resolved_nodes=[None], uuid_map={}, unresolved_indices=[]
+    )
 
     _resolve_with_similarity([extracted], indexes, state)
 
@@ -281,12 +287,18 @@ def test_resolve_with_similarity_low_entropy_defers_resolution():
 
 
 def test_resolve_with_similarity_multiple_exact_matches_defers_to_llm():
-    candidate1 = EntityNode(name='Johnny Appleseed', group_id='group', labels=['Entity'])
-    candidate2 = EntityNode(name='Johnny Appleseed', group_id='group', labels=['Entity'])
-    extracted = EntityNode(name='Johnny Appleseed', group_id='group', labels=['Entity'])
+    candidate1 = EntityNode(
+        name="Johnny Appleseed", group_id="group", labels=["Entity"]
+    )
+    candidate2 = EntityNode(
+        name="Johnny Appleseed", group_id="group", labels=["Entity"]
+    )
+    extracted = EntityNode(name="Johnny Appleseed", group_id="group", labels=["Entity"])
 
     indexes = _build_candidate_indexes([candidate1, candidate2])
-    state = DedupResolutionState(resolved_nodes=[None], uuid_map={}, unresolved_indices=[])
+    state = DedupResolutionState(
+        resolved_nodes=[None], uuid_map={}, unresolved_indices=[]
+    )
 
     _resolve_with_similarity([extracted], indexes, state)
 
@@ -297,31 +309,33 @@ def test_resolve_with_similarity_multiple_exact_matches_defers_to_llm():
 
 @pytest.mark.asyncio
 async def test_resolve_with_llm_updates_unresolved(monkeypatch):
-    extracted = EntityNode(name='Dizzy', group_id='group', labels=['Entity'])
-    candidate = EntityNode(name='Dizzy Gillespie', group_id='group', labels=['Entity'])
+    extracted = EntityNode(name="Dizzy", group_id="group", labels=["Entity"])
+    candidate = EntityNode(name="Dizzy Gillespie", group_id="group", labels=["Entity"])
 
     indexes = _build_candidate_indexes([candidate])
-    state = DedupResolutionState(resolved_nodes=[None], uuid_map={}, unresolved_indices=[0])
+    state = DedupResolutionState(
+        resolved_nodes=[None], uuid_map={}, unresolved_indices=[0]
+    )
 
     captured_context = {}
 
     def fake_prompt_nodes(context):
         captured_context.update(context)
-        return ['prompt']
+        return ["prompt"]
 
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.prompt_library.dedupe_nodes.nodes',
+        "graphiti_core.utils.maintenance.node_operations.prompt_library.dedupe_nodes.nodes",
         fake_prompt_nodes,
     )
 
     async def fake_generate_response(*_, **__):
         return {
-            'entity_resolutions': [
+            "entity_resolutions": [
                 {
-                    'id': 0,
-                    'duplicate_idx': 0,
-                    'name': 'Dizzy Gillespie',
-                    'duplicates': [0],
+                    "id": 0,
+                    "duplicate_idx": 0,
+                    "name": "Dizzy Gillespie",
+                    "duplicates": [0],
                 }
             ]
         }
@@ -341,32 +355,34 @@ async def test_resolve_with_llm_updates_unresolved(monkeypatch):
 
     assert state.resolved_nodes[0].uuid == candidate.uuid
     assert state.uuid_map[extracted.uuid] == candidate.uuid
-    assert captured_context['existing_nodes'][0]['idx'] == 0
-    assert isinstance(captured_context['existing_nodes'], list)
+    assert captured_context["existing_nodes"][0]["idx"] == 0
+    assert isinstance(captured_context["existing_nodes"], list)
     assert state.duplicate_pairs == [(extracted, candidate)]
 
 
 @pytest.mark.asyncio
 async def test_resolve_with_llm_ignores_out_of_range_relative_ids(monkeypatch, caplog):
-    extracted = EntityNode(name='Dexter', group_id='group', labels=['Entity'])
+    extracted = EntityNode(name="Dexter", group_id="group", labels=["Entity"])
 
     indexes = _build_candidate_indexes([])
-    state = DedupResolutionState(resolved_nodes=[None], uuid_map={}, unresolved_indices=[0])
+    state = DedupResolutionState(
+        resolved_nodes=[None], uuid_map={}, unresolved_indices=[0]
+    )
 
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.prompt_library.dedupe_nodes.nodes',
-        lambda context: ['prompt'],
+        "graphiti_core.utils.maintenance.node_operations.prompt_library.dedupe_nodes.nodes",
+        lambda context: ["prompt"],
     )
 
     llm_client = MagicMock()
     llm_client.generate_response = AsyncMock(
         return_value={
-            'entity_resolutions': [
+            "entity_resolutions": [
                 {
-                    'id': 5,
-                    'duplicate_idx': -1,
-                    'name': 'Dexter',
-                    'duplicates': [],
+                    "id": 5,
+                    "duplicate_idx": -1,
+                    "name": "Dexter",
+                    "duplicates": [],
                 }
             ]
         }
@@ -384,37 +400,39 @@ async def test_resolve_with_llm_ignores_out_of_range_relative_ids(monkeypatch, c
         )
 
     assert state.resolved_nodes[0] is None
-    assert 'Skipping invalid LLM dedupe id 5' in caplog.text
+    assert "Skipping invalid LLM dedupe id 5" in caplog.text
 
 
 @pytest.mark.asyncio
 async def test_resolve_with_llm_ignores_duplicate_relative_ids(monkeypatch):
-    extracted = EntityNode(name='Dizzy', group_id='group', labels=['Entity'])
-    candidate = EntityNode(name='Dizzy Gillespie', group_id='group', labels=['Entity'])
+    extracted = EntityNode(name="Dizzy", group_id="group", labels=["Entity"])
+    candidate = EntityNode(name="Dizzy Gillespie", group_id="group", labels=["Entity"])
 
     indexes = _build_candidate_indexes([candidate])
-    state = DedupResolutionState(resolved_nodes=[None], uuid_map={}, unresolved_indices=[0])
+    state = DedupResolutionState(
+        resolved_nodes=[None], uuid_map={}, unresolved_indices=[0]
+    )
 
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.prompt_library.dedupe_nodes.nodes',
-        lambda context: ['prompt'],
+        "graphiti_core.utils.maintenance.node_operations.prompt_library.dedupe_nodes.nodes",
+        lambda context: ["prompt"],
     )
 
     llm_client = MagicMock()
     llm_client.generate_response = AsyncMock(
         return_value={
-            'entity_resolutions': [
+            "entity_resolutions": [
                 {
-                    'id': 0,
-                    'duplicate_idx': 0,
-                    'name': 'Dizzy Gillespie',
-                    'duplicates': [0],
+                    "id": 0,
+                    "duplicate_idx": 0,
+                    "name": "Dizzy Gillespie",
+                    "duplicates": [0],
                 },
                 {
-                    'id': 0,
-                    'duplicate_idx': -1,
-                    'name': 'Dizzy',
-                    'duplicates': [],
+                    "id": 0,
+                    "duplicate_idx": -1,
+                    "name": "Dizzy",
+                    "duplicates": [],
                 },
             ]
         }
@@ -436,26 +454,30 @@ async def test_resolve_with_llm_ignores_duplicate_relative_ids(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_resolve_with_llm_invalid_duplicate_idx_defaults_to_extracted(monkeypatch):
-    extracted = EntityNode(name='Dexter', group_id='group', labels=['Entity'])
+async def test_resolve_with_llm_invalid_duplicate_idx_defaults_to_extracted(
+    monkeypatch,
+):
+    extracted = EntityNode(name="Dexter", group_id="group", labels=["Entity"])
 
     indexes = _build_candidate_indexes([])
-    state = DedupResolutionState(resolved_nodes=[None], uuid_map={}, unresolved_indices=[0])
+    state = DedupResolutionState(
+        resolved_nodes=[None], uuid_map={}, unresolved_indices=[0]
+    )
 
     monkeypatch.setattr(
-        'graphiti_core.utils.maintenance.node_operations.prompt_library.dedupe_nodes.nodes',
-        lambda context: ['prompt'],
+        "graphiti_core.utils.maintenance.node_operations.prompt_library.dedupe_nodes.nodes",
+        lambda context: ["prompt"],
     )
 
     llm_client = MagicMock()
     llm_client.generate_response = AsyncMock(
         return_value={
-            'entity_resolutions': [
+            "entity_resolutions": [
                 {
-                    'id': 0,
-                    'duplicate_idx': 10,
-                    'name': 'Dexter',
-                    'duplicates': [],
+                    "id": 0,
+                    "duplicate_idx": 10,
+                    "name": "Dexter",
+                    "duplicates": [],
                 }
             ]
         }
@@ -481,10 +503,12 @@ async def test_extract_attributes_without_callback_generates_summary():
     """Test that summary is generated when no callback is provided (default behavior)."""
     llm_client = MagicMock()
     llm_client.generate_response = AsyncMock(
-        return_value={'summary': 'Generated summary', 'attributes': {}}
+        return_value={"summary": "Generated summary", "attributes": {}}
     )
 
-    node = EntityNode(name='Test Node', group_id='group', labels=['Entity'], summary='Old summary')
+    node = EntityNode(
+        name="Test Node", group_id="group", labels=["Entity"], summary="Old summary"
+    )
     episode = _make_episode()
 
     result = await extract_attributes_from_node(
@@ -497,7 +521,7 @@ async def test_extract_attributes_without_callback_generates_summary():
     )
 
     # Summary should be generated
-    assert result.summary == 'Generated summary'
+    assert result.summary == "Generated summary"
     # LLM should have been called for summary
     assert llm_client.generate_response.call_count == 1
 
@@ -507,10 +531,12 @@ async def test_extract_attributes_with_callback_skip_summary():
     """Test that summary is NOT regenerated when callback returns False."""
     llm_client = MagicMock()
     llm_client.generate_response = AsyncMock(
-        return_value={'summary': 'This should not be used', 'attributes': {}}
+        return_value={"summary": "This should not be used", "attributes": {}}
     )
 
-    node = EntityNode(name='Test Node', group_id='group', labels=['Entity'], summary='Old summary')
+    node = EntityNode(
+        name="Test Node", group_id="group", labels=["Entity"], summary="Old summary"
+    )
     episode = _make_episode()
 
     # Callback that always returns False (skip summary generation)
@@ -527,7 +553,7 @@ async def test_extract_attributes_with_callback_skip_summary():
     )
 
     # Summary should remain unchanged
-    assert result.summary == 'Old summary'
+    assert result.summary == "Old summary"
     # LLM should NOT have been called for summary
     assert llm_client.generate_response.call_count == 0
 
@@ -537,10 +563,12 @@ async def test_extract_attributes_with_callback_generate_summary():
     """Test that summary is regenerated when callback returns True."""
     llm_client = MagicMock()
     llm_client.generate_response = AsyncMock(
-        return_value={'summary': 'New generated summary', 'attributes': {}}
+        return_value={"summary": "New generated summary", "attributes": {}}
     )
 
-    node = EntityNode(name='Test Node', group_id='group', labels=['Entity'], summary='Old summary')
+    node = EntityNode(
+        name="Test Node", group_id="group", labels=["Entity"], summary="Old summary"
+    )
     episode = _make_episode()
 
     # Callback that always returns True (generate summary)
@@ -557,7 +585,7 @@ async def test_extract_attributes_with_callback_generate_summary():
     )
 
     # Summary should be updated
-    assert result.summary == 'New generated summary'
+    assert result.summary == "New generated summary"
     # LLM should have been called for summary
     assert llm_client.generate_response.call_count == 1
 
@@ -567,19 +595,21 @@ async def test_extract_attributes_with_selective_callback():
     """Test callback that selectively skips summaries based on node properties."""
     llm_client = MagicMock()
     llm_client.generate_response = AsyncMock(
-        return_value={'summary': 'Generated summary', 'attributes': {}}
+        return_value={"summary": "Generated summary", "attributes": {}}
     )
 
-    user_node = EntityNode(name='User', group_id='group', labels=['Entity', 'User'], summary='Old')
+    user_node = EntityNode(
+        name="User", group_id="group", labels=["Entity", "User"], summary="Old"
+    )
     topic_node = EntityNode(
-        name='Topic', group_id='group', labels=['Entity', 'Topic'], summary='Old'
+        name="Topic", group_id="group", labels=["Entity", "Topic"], summary="Old"
     )
 
     episode = _make_episode()
 
     # Callback that skips User nodes but generates for others
     async def selective_filter(node: EntityNode) -> bool:
-        return 'User' not in node.labels
+        return "User" not in node.labels
 
     result_user = await extract_attributes_from_node(
         llm_client,
@@ -600,9 +630,9 @@ async def test_extract_attributes_with_selective_callback():
     )
 
     # User summary should remain unchanged
-    assert result_user.summary == 'Old'
+    assert result_user.summary == "Old"
     # Topic summary should be generated
-    assert result_topic.summary == 'Generated summary'
+    assert result_topic.summary == "Generated summary"
     # LLM should have been called only once (for topic)
     assert llm_client.generate_response.call_count == 1
 
@@ -612,13 +642,19 @@ async def test_extract_attributes_from_nodes_with_callback():
     """Test that callback is properly passed through extract_attributes_from_nodes."""
     clients, _ = _make_clients()
     clients.llm_client.generate_response = AsyncMock(
-        return_value={'summary': 'New summary', 'attributes': {}}
+        return_value={"summary": "New summary", "attributes": {}}
     )
     clients.embedder.create = AsyncMock(return_value=[0.1, 0.2, 0.3])
-    clients.embedder.create_batch = AsyncMock(return_value=[[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]])
+    clients.embedder.create_batch = AsyncMock(
+        return_value=[[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+    )
 
-    node1 = EntityNode(name='Node1', group_id='group', labels=['Entity', 'User'], summary='Old1')
-    node2 = EntityNode(name='Node2', group_id='group', labels=['Entity', 'Topic'], summary='Old2')
+    node1 = EntityNode(
+        name="Node1", group_id="group", labels=["Entity", "User"], summary="Old1"
+    )
+    node2 = EntityNode(
+        name="Node2", group_id="group", labels=["Entity", "Topic"], summary="Old2"
+    )
 
     episode = _make_episode()
 
@@ -627,7 +663,7 @@ async def test_extract_attributes_from_nodes_with_callback():
     # Callback that tracks which nodes it's called with
     async def tracking_filter(node: EntityNode) -> bool:
         call_tracker.append(node.name)
-        return 'User' not in node.labels
+        return "User" not in node.labels
 
     results = await extract_attributes_from_nodes(
         clients,
@@ -640,12 +676,12 @@ async def test_extract_attributes_from_nodes_with_callback():
 
     # Callback should have been called for both nodes
     assert len(call_tracker) == 2
-    assert 'Node1' in call_tracker
-    assert 'Node2' in call_tracker
+    assert "Node1" in call_tracker
+    assert "Node2" in call_tracker
 
     # Node1 (User) should keep old summary, Node2 (Topic) should get new summary
-    node1_result = next(n for n in results if n.name == 'Node1')
-    node2_result = next(n for n in results if n.name == 'Node2')
+    node1_result = next(n for n in results if n.name == "Node1")
+    node2_result = next(n for n in results if n.name == "Node2")
 
-    assert node1_result.summary == 'Old1'
-    assert node2_result.summary == 'New summary'
+    assert node1_result.summary == "Old1"
+    assert node2_result.summary == "New summary"

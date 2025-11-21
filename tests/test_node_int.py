@@ -43,15 +43,15 @@ invalid_at = created_at + timedelta(days=2)
 def sample_entity_node():
     return EntityNode(
         uuid=str(uuid4()),
-        name='Test Entity',
+        name="Test Entity",
         group_id=group_id,
-        labels=['Entity', 'Person'],
+        labels=["Entity", "Person"],
         created_at=created_at,
         name_embedding=[0.5] * 1024,
-        summary='Entity Summary',
+        summary="Entity Summary",
         attributes={
-            'age': 30,
-            'location': 'New York',
+            "age": 30,
+            "location": "New York",
         },
     )
 
@@ -60,12 +60,12 @@ def sample_entity_node():
 def sample_episodic_node():
     return EpisodicNode(
         uuid=str(uuid4()),
-        name='Episode 1',
+        name="Episode 1",
         group_id=group_id,
         created_at=created_at,
         source=EpisodeType.text,
-        source_description='Test source',
-        content='Some content here',
+        source_description="Test source",
+        content="Some content here",
         valid_at=valid_at,
         entity_edges=[],
     )
@@ -75,11 +75,11 @@ def sample_episodic_node():
 def sample_community_node():
     return CommunityNode(
         uuid=str(uuid4()),
-        name='Community A',
+        name="Community A",
         group_id=group_id,
         created_at=created_at,
         name_embedding=[0.5] * 1024,
-        summary='Community summary',
+        summary="Community summary",
     )
 
 
@@ -145,17 +145,25 @@ async def test_community_node(sample_community_node, graph_driver):
     assert node_count == 1
 
     # Get node by uuid
-    retrieved = await CommunityNode.get_by_uuid(graph_driver, sample_community_node.uuid)
+    retrieved = await CommunityNode.get_by_uuid(
+        graph_driver, sample_community_node.uuid
+    )
     await assert_community_node_equals(graph_driver, retrieved, sample_community_node)
 
     # Get node by uuids
-    retrieved = await CommunityNode.get_by_uuids(graph_driver, [sample_community_node.uuid])
-    await assert_community_node_equals(graph_driver, retrieved[0], sample_community_node)
+    retrieved = await CommunityNode.get_by_uuids(
+        graph_driver, [sample_community_node.uuid]
+    )
+    await assert_community_node_equals(
+        graph_driver, retrieved[0], sample_community_node
+    )
 
     # Get node by group ids
     retrieved = await CommunityNode.get_by_group_ids(graph_driver, [group_id], limit=2)
     assert len(retrieved) == 1
-    await assert_community_node_equals(graph_driver, retrieved[0], sample_community_node)
+    await assert_community_node_equals(
+        graph_driver, retrieved[0], sample_community_node
+    )
 
     # Delete node by uuid
     await sample_community_node.delete(graph_driver)
@@ -197,7 +205,9 @@ async def test_episodic_node(sample_episodic_node, graph_driver):
     await assert_episodic_node_equals(retrieved, sample_episodic_node)
 
     # Get node by uuids
-    retrieved = await EpisodicNode.get_by_uuids(graph_driver, [sample_episodic_node.uuid])
+    retrieved = await EpisodicNode.get_by_uuids(
+        graph_driver, [sample_episodic_node.uuid]
+    )
     await assert_episodic_node_equals(retrieved[0], sample_episodic_node)
 
     # Get node by group ids

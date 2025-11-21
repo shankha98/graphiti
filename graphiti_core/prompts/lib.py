@@ -73,7 +73,7 @@ class VersionWrapper:
     def __call__(self, context: dict[str, Any]) -> list[Message]:
         messages = self.func(context)
         for message in messages:
-            message.content += DO_NOT_ESCAPE_UNICODE if message.role == 'system' else ''
+            message.content += DO_NOT_ESCAPE_UNICODE if message.role == "system" else ""
         return messages
 
 
@@ -90,13 +90,13 @@ class PromptLibraryWrapper:
 
 
 PROMPT_LIBRARY_IMPL: PromptLibraryImpl = {
-    'extract_nodes': extract_nodes_versions,
-    'dedupe_nodes': dedupe_nodes_versions,
-    'extract_edges': extract_edges_versions,
-    'dedupe_edges': dedupe_edges_versions,
-    'invalidate_edges': invalidate_edges_versions,
-    'extract_edge_dates': extract_edge_dates_versions,
-    'summarize_nodes': summarize_nodes_versions,
-    'eval': eval_versions,
+    "extract_nodes": extract_nodes_versions,
+    "dedupe_nodes": dedupe_nodes_versions,
+    "extract_edges": extract_edges_versions,
+    "dedupe_edges": dedupe_edges_versions,
+    "invalidate_edges": invalidate_edges_versions,
+    "extract_edge_dates": extract_edge_dates_versions,
+    "summarize_nodes": summarize_nodes_versions,
+    "eval": eval_versions,
 }
 prompt_library: PromptLibrary = PromptLibraryWrapper(PROMPT_LIBRARY_IMPL)  # type: ignore[assignment]

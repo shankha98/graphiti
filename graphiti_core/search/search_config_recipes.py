@@ -47,7 +47,10 @@ COMBINED_HYBRID_SEARCH_RRF = SearchConfig(
         reranker=EpisodeReranker.rrf,
     ),
     community_config=CommunitySearchConfig(
-        search_methods=[CommunitySearchMethod.bm25, CommunitySearchMethod.cosine_similarity],
+        search_methods=[
+            CommunitySearchMethod.bm25,
+            CommunitySearchMethod.cosine_similarity,
+        ],
         reranker=CommunityReranker.rrf,
     ),
 )
@@ -71,7 +74,10 @@ COMBINED_HYBRID_SEARCH_MMR = SearchConfig(
         reranker=EpisodeReranker.rrf,
     ),
     community_config=CommunitySearchConfig(
-        search_methods=[CommunitySearchMethod.bm25, CommunitySearchMethod.cosine_similarity],
+        search_methods=[
+            CommunitySearchMethod.bm25,
+            CommunitySearchMethod.cosine_similarity,
+        ],
         reranker=CommunityReranker.mmr,
         mmr_lambda=1,
     ),
@@ -102,7 +108,10 @@ COMBINED_HYBRID_SEARCH_CROSS_ENCODER = SearchConfig(
         reranker=EpisodeReranker.cross_encoder,
     ),
     community_config=CommunitySearchConfig(
-        search_methods=[CommunitySearchMethod.bm25, CommunitySearchMethod.cosine_similarity],
+        search_methods=[
+            CommunitySearchMethod.bm25,
+            CommunitySearchMethod.cosine_similarity,
+        ],
         reranker=CommunityReranker.cross_encoder,
     ),
 )
@@ -200,7 +209,10 @@ NODE_HYBRID_SEARCH_CROSS_ENCODER = SearchConfig(
 # performs a hybrid search over communities with rrf reranking
 COMMUNITY_HYBRID_SEARCH_RRF = SearchConfig(
     community_config=CommunitySearchConfig(
-        search_methods=[CommunitySearchMethod.bm25, CommunitySearchMethod.cosine_similarity],
+        search_methods=[
+            CommunitySearchMethod.bm25,
+            CommunitySearchMethod.cosine_similarity,
+        ],
         reranker=CommunityReranker.rrf,
     )
 )
@@ -208,7 +220,10 @@ COMMUNITY_HYBRID_SEARCH_RRF = SearchConfig(
 # performs a hybrid search over communities with mmr reranking
 COMMUNITY_HYBRID_SEARCH_MMR = SearchConfig(
     community_config=CommunitySearchConfig(
-        search_methods=[CommunitySearchMethod.bm25, CommunitySearchMethod.cosine_similarity],
+        search_methods=[
+            CommunitySearchMethod.bm25,
+            CommunitySearchMethod.cosine_similarity,
+        ],
         reranker=CommunityReranker.mmr,
     )
 )
@@ -216,7 +231,10 @@ COMMUNITY_HYBRID_SEARCH_MMR = SearchConfig(
 # performs a hybrid search over communities with mmr reranking
 COMMUNITY_HYBRID_SEARCH_CROSS_ENCODER = SearchConfig(
     community_config=CommunitySearchConfig(
-        search_methods=[CommunitySearchMethod.bm25, CommunitySearchMethod.cosine_similarity],
+        search_methods=[
+            CommunitySearchMethod.bm25,
+            CommunitySearchMethod.cosine_similarity,
+        ],
         reranker=CommunityReranker.cross_encoder,
     ),
     limit=3,

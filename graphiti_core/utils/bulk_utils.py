@@ -118,7 +118,10 @@ async def retrieve_previous_episodes_bulk(
     previous_episodes_list = await semaphore_gather(
         *[
             retrieve_episodes(
-                driver, episode.valid_at, last_n=EPISODE_WINDOW_LEN, group_ids=[episode.group_id]
+                driver,
+                episode.valid_at,
+                last_n=EPISODE_WINDOW_LEN,
+                group_ids=[episode.group_id],
             )
             for episode in episodes
         ]
@@ -164,8 +167,8 @@ async def add_nodes_and_edges_bulk_tx(
 ):
     episodes = [dict(episode) for episode in episodic_nodes]
     for episode in episodes:
-        episode['source'] = str(episode['source'].value)
-        episode.pop('labels', None)
+        episode["source"] = str(episode["source"].value)
+        episode.pop("labels", None)
 
     nodes = []
 
@@ -174,18 +177,20 @@ async def add_nodes_and_edges_bulk_tx(
             await node.generate_name_embedding(embedder)
 
         entity_data: dict[str, Any] = {
-            'uuid': node.uuid,
-            'name': node.name,
-            'group_id': node.group_id,
-            'summary': node.summary,
-            'created_at': node.created_at,
-            'name_embedding': node.name_embedding,
-            'labels': list(set(node.labels + ['Entity'])),
+            "uuid": node.uuid,
+            "name": node.name,
+            "group_id": node.group_id,
+            "summary": node.summary,
+            "created_at": node.created_at,
+            "name_embedding": node.name_embedding,
+            "labels": list(set(node.labels + ["Entity"])),
         }
 
         if driver.provider == GraphProvider.KUZU:
-            attributes = convert_datetimes_to_strings(node.attributes) if node.attributes else {}
-            entity_data['attributes'] = json.dumps(attributes)
+            attributes = (
+                convert_datetimes_to_strings(node.attributes) if node.attributes else {}
+            )
+            entity_data["attributes"] = json.dumps(attributes)
         else:
             entity_data.update(node.attributes or {})
 
@@ -196,23 +201,25 @@ async def add_nodes_and_edges_bulk_tx(
         if edge.fact_embedding is None:
             await edge.generate_embedding(embedder)
         edge_data: dict[str, Any] = {
-            'uuid': edge.uuid,
-            'source_node_uuid': edge.source_node_uuid,
-            'target_node_uuid': edge.target_node_uuid,
-            'name': edge.name,
-            'fact': edge.fact,
-            'group_id': edge.group_id,
-            'episodes': edge.episodes,
-            'created_at': edge.created_at,
-            'expired_at': edge.expired_at,
-            'valid_at': edge.valid_at,
-            'invalid_at': edge.invalid_at,
-            'fact_embedding': edge.fact_embedding,
+            "uuid": edge.uuid,
+            "source_node_uuid": edge.source_node_uuid,
+            "target_node_uuid": edge.target_node_uuid,
+            "name": edge.name,
+            "fact": edge.fact,
+            "group_id": edge.group_id,
+            "episodes": edge.episodes,
+            "created_at": edge.created_at,
+            "expired_at": edge.expired_at,
+            "valid_at": edge.valid_at,
+            "invalid_at": edge.invalid_at,
+            "fact_embedding": edge.fact_embedding,
         }
 
         if driver.provider == GraphProvider.KUZU:
-            attributes = convert_datetimes_to_strings(edge.attributes) if edge.attributes else {}
-            edge_data['attributes'] = json.dumps(attributes)
+            attributes = (
+                convert_datetimes_to_strings(edge.attributes) if edge.attributes else {}
+            )
+            edge_data["attributes"] = json.dumps(attributes)
         else:
             edge_data.update(edge.attributes or {})
 
@@ -243,7 +250,9 @@ async def add_nodes_and_edges_bulk_tx(
         for edge in episodic_edges:
             await tx.run(episodic_edge_query, **edge.model_dump())
     else:
-        await tx.run(get_episode_node_save_bulk_query(driver.provider), episodes=episodes)
+        await tx.run(
+            get_episode_node_save_bulk_query(driver.provider), episodes=episodes
+        )
         await tx.run(
             get_entity_node_save_bulk_query(driver.provider, nodes),
             nodes=nodes,
@@ -268,7 +277,9 @@ async def extract_nodes_and_edges_bulk(
 ) -> tuple[list[list[EntityNode]], list[list[EntityEdge]]]:
     extracted_nodes_bulk: list[list[EntityNode]] = await semaphore_gather(
         *[
-            extract_nodes(clients, episode, previous_episodes, entity_types, excluded_entity_types)
+            extract_nodes(
+                clients, episode, previous_episodes, entity_types, excluded_entity_types
+            )
             for episode, previous_episodes in episode_tuples
         ]
     )
@@ -328,7 +339,9 @@ async def dedupe_nodes_bulk(
     ):
         episode_resolutions.append((episode.uuid, resolved_nodes))
         per_episode_uuid_maps.append(uuid_map)
-        duplicate_pairs.extend((source.uuid, target.uuid) for source, target in duplicates)
+        duplicate_pairs.extend(
+            (source.uuid, target.uuid) for source, target in duplicates
+        )
 
     canonical_nodes: dict[str, EntityNode] = {}
     for _, resolved_nodes in episode_resolutions:
@@ -394,7 +407,7 @@ async def dedupe_nodes_bulk(
             canonical_node = canonical_nodes.get(canonical_uuid)
             if canonical_node is None:
                 logger.error(
-                    'Canonical node %s missing during batch dedupe; falling back to %s',
+                    "Canonical node %s missing during batch dedupe; falling back to %s",
                     canonical_uuid,
                     node.uuid,
                 )
@@ -542,7 +555,7 @@ def compress_uuid_map(duplicate_pairs: list[tuple[str, str]]) -> dict[str, str]:
     return {uuid: uf.find(uuid) for uuid in all_uuids}
 
 
-E = typing.TypeVar('E', bound=Edge)
+E = typing.TypeVar("E", bound=Edge)
 
 
 def resolve_edge_pointers(edges: list[E], uuid_map: dict[str, str]):

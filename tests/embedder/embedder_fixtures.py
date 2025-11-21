@@ -15,6 +15,8 @@ limitations under the License.
 """
 
 
-def create_embedding_values(multiplier: float = 0.1, dimension: int = 1536) -> list[float]:
+def create_embedding_values(
+    multiplier: float = 0.1, dimension: int = 1536
+) -> list[float]:
     """Create embedding values with the specified multiplier and dimension."""
     return [multiplier] * dimension

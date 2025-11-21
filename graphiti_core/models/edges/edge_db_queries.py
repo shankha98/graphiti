@@ -103,7 +103,7 @@ def get_entity_edge_save_query(provider: GraphProvider, has_aoss: bool = False) 
             save_embedding_query = (
                 """WITH e CALL db.create.setRelationshipVectorProperty(e, "fact_embedding", $edge_data.fact_embedding)"""
                 if not has_aoss
-                else ''
+                else ""
             )
             return (
                 (
@@ -121,7 +121,9 @@ def get_entity_edge_save_query(provider: GraphProvider, has_aoss: bool = False) 
             )
 
 
-def get_entity_edge_save_bulk_query(provider: GraphProvider, has_aoss: bool = False) -> str:
+def get_entity_edge_save_bulk_query(
+    provider: GraphProvider, has_aoss: bool = False
+) -> str:
     match provider:
         case GraphProvider.FALKORDB:
             return """
@@ -167,7 +169,7 @@ def get_entity_edge_save_bulk_query(provider: GraphProvider, has_aoss: bool = Fa
             save_embedding_query = (
                 'WITH e, edge CALL db.create.setRelationshipVectorProperty(e, "fact_embedding", edge.fact_embedding)'
                 if not has_aoss
-                else ''
+                else ""
             )
             return (
                 """
@@ -216,9 +218,9 @@ def get_entity_edge_return_query(provider: GraphProvider) -> str:
         e.valid_at AS valid_at,
         e.invalid_at AS invalid_at,
     """ + (
-        'e.attributes AS attributes'
+        "e.attributes AS attributes"
         if provider == GraphProvider.KUZU
-        else 'properties(e) AS attributes'
+        else "properties(e) AS attributes"
     )
 
 

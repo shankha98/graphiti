@@ -33,7 +33,9 @@ EPISODE_WINDOW_LEN = 3
 logger = logging.getLogger(__name__)
 
 
-async def build_indices_and_constraints(driver: GraphDriver, delete_existing: bool = False):
+async def build_indices_and_constraints(
+    driver: GraphDriver, delete_existing: bool = False
+):
     if delete_existing:
         await driver.delete_all_indexes()
 
@@ -46,12 +48,14 @@ async def build_indices_and_constraints(driver: GraphDriver, delete_existing: bo
     if driver.provider == GraphProvider.KUZU:
         # Skip creating fulltext indices if they already exist. Need to do this manually
         # until Kuzu supports `IF NOT EXISTS` for indices.
-        result, _, _ = await driver.execute_query('CALL SHOW_INDEXES() RETURN *;')
+        result, _, _ = await driver.execute_query("CALL SHOW_INDEXES() RETURN *;")
         if len(result) > 0:
             fulltext_indices = []
 
         # Only load the `fts` extension if it's not already loaded, otherwise throw an error.
-        result, _, _ = await driver.execute_query('CALL SHOW_LOADED_EXTENSIONS() RETURN *;')
+        result, _, _ = await driver.execute_query(
+            "CALL SHOW_LOADED_EXTENSIONS() RETURN *;"
+        )
         if len(result) == 0:
             fulltext_indices.insert(
                 0,
@@ -77,12 +81,12 @@ async def clear_data(driver: GraphDriver, group_ids: list[str] | None = None):
     async with driver.session() as session:
 
         async def delete_all(tx):
-            await tx.run('MATCH (n) DETACH DELETE n')
+            await tx.run("MATCH (n) DETACH DELETE n")
 
         async def delete_group_ids(tx):
-            labels = ['Entity', 'Episodic', 'Community']
+            labels = ["Entity", "Episodic", "Community"]
             if driver.provider == GraphProvider.KUZU:
-                labels.append('RelatesToNode_')
+                labels.append("RelatesToNode_")
 
             for label in labels:
                 await tx.run(
@@ -123,14 +127,14 @@ async def retrieve_episodes(
     """
 
     query_params: dict = {}
-    query_filter = ''
+    query_filter = ""
     if group_ids and len(group_ids) > 0:
-        query_filter += '\nAND e.group_id IN $group_ids'
-        query_params['group_ids'] = group_ids
+        query_filter += "\nAND e.group_id IN $group_ids"
+        query_params["group_ids"] = group_ids
 
     if source is not None:
-        query_filter += '\nAND e.source = $source'
-        query_params['source'] = source.name
+        query_filter += "\nAND e.source = $source"
+        query_params["source"] = source.name
 
     query: LiteralString = (
         """

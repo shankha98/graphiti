@@ -32,6 +32,8 @@ def validate_entity_types(
         entity_type_field_names = entity_type_model.model_fields.keys()
         for entity_type_field_name in entity_type_field_names:
             if entity_type_field_name in entity_node_field_names:
-                raise EntityTypeValidationError(entity_type_name, entity_type_field_name)
+                raise EntityTypeValidationError(
+                    entity_type_name, entity_type_field_name
+                )
 
     return True

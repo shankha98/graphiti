@@ -36,76 +36,80 @@ DEFAULT_SIZE = 10
 
 aoss_indices = [
     {
-        'index_name': 'node_name_and_summary',
-        'body': {
-            'mappings': {
-                'properties': {
-                    'uuid': {'type': 'keyword'},
-                    'name': {'type': 'text'},
-                    'summary': {'type': 'text'},
-                    'group_id': {'type': 'text'},
+        "index_name": "node_name_and_summary",
+        "body": {
+            "mappings": {
+                "properties": {
+                    "uuid": {"type": "keyword"},
+                    "name": {"type": "text"},
+                    "summary": {"type": "text"},
+                    "group_id": {"type": "text"},
                 }
             }
         },
-        'query': {
-            'query': {'multi_match': {'query': '', 'fields': ['name', 'summary', 'group_id']}},
-            'size': DEFAULT_SIZE,
+        "query": {
+            "query": {
+                "multi_match": {"query": "", "fields": ["name", "summary", "group_id"]}
+            },
+            "size": DEFAULT_SIZE,
         },
     },
     {
-        'index_name': 'community_name',
-        'body': {
-            'mappings': {
-                'properties': {
-                    'uuid': {'type': 'keyword'},
-                    'name': {'type': 'text'},
-                    'group_id': {'type': 'text'},
+        "index_name": "community_name",
+        "body": {
+            "mappings": {
+                "properties": {
+                    "uuid": {"type": "keyword"},
+                    "name": {"type": "text"},
+                    "group_id": {"type": "text"},
                 }
             }
         },
-        'query': {
-            'query': {'multi_match': {'query': '', 'fields': ['name', 'group_id']}},
-            'size': DEFAULT_SIZE,
+        "query": {
+            "query": {"multi_match": {"query": "", "fields": ["name", "group_id"]}},
+            "size": DEFAULT_SIZE,
         },
     },
     {
-        'index_name': 'episode_content',
-        'body': {
-            'mappings': {
-                'properties': {
-                    'uuid': {'type': 'keyword'},
-                    'content': {'type': 'text'},
-                    'source': {'type': 'text'},
-                    'source_description': {'type': 'text'},
-                    'group_id': {'type': 'text'},
+        "index_name": "episode_content",
+        "body": {
+            "mappings": {
+                "properties": {
+                    "uuid": {"type": "keyword"},
+                    "content": {"type": "text"},
+                    "source": {"type": "text"},
+                    "source_description": {"type": "text"},
+                    "group_id": {"type": "text"},
                 }
             }
         },
-        'query': {
-            'query': {
-                'multi_match': {
-                    'query': '',
-                    'fields': ['content', 'source', 'source_description', 'group_id'],
+        "query": {
+            "query": {
+                "multi_match": {
+                    "query": "",
+                    "fields": ["content", "source", "source_description", "group_id"],
                 }
             },
-            'size': DEFAULT_SIZE,
+            "size": DEFAULT_SIZE,
         },
     },
     {
-        'index_name': 'edge_name_and_fact',
-        'body': {
-            'mappings': {
-                'properties': {
-                    'uuid': {'type': 'keyword'},
-                    'name': {'type': 'text'},
-                    'fact': {'type': 'text'},
-                    'group_id': {'type': 'text'},
+        "index_name": "edge_name_and_fact",
+        "body": {
+            "mappings": {
+                "properties": {
+                    "uuid": {"type": "keyword"},
+                    "name": {"type": "text"},
+                    "fact": {"type": "text"},
+                    "group_id": {"type": "text"},
                 }
             }
         },
-        'query': {
-            'query': {'multi_match': {'query': '', 'fields': ['name', 'fact', 'group_id']}},
-            'size': DEFAULT_SIZE,
+        "query": {
+            "query": {
+                "multi_match": {"query": "", "fields": ["name", "fact", "group_id"]}
+            },
+            "size": DEFAULT_SIZE,
         },
     },
 ]
@@ -114,7 +118,9 @@ aoss_indices = [
 class NeptuneDriver(GraphDriver):
     provider: GraphProvider = GraphProvider.NEPTUNE
 
-    def __init__(self, host: str, aoss_host: str, port: int = 8182, aoss_port: int = 443):
+    def __init__(
+        self, host: str, aoss_host: str, port: int = 8182, aoss_port: int = 443
+    ):
         """This initializes a NeptuneDriver for use with Neptune as a backend
 
         Args:
@@ -124,31 +130,33 @@ class NeptuneDriver(GraphDriver):
             aoss_port (int, optional): The OpenSearch port. Defaults to 443.
         """
         if not host:
-            raise ValueError('You must provide an endpoint to create a NeptuneDriver')
+            raise ValueError("You must provide an endpoint to create a NeptuneDriver")
 
-        if host.startswith('neptune-db://'):
+        if host.startswith("neptune-db://"):
             # This is a Neptune Database Cluster
-            endpoint = host.replace('neptune-db://', '')
+            endpoint = host.replace("neptune-db://", "")
             self.client = NeptuneGraph(endpoint, port)
-            logger.debug('Creating Neptune Database session for %s', host)
-        elif host.startswith('neptune-graph://'):
+            logger.debug("Creating Neptune Database session for %s", host)
+        elif host.startswith("neptune-graph://"):
             # This is a Neptune Analytics Graph
-            graphId = host.replace('neptune-graph://', '')
+            graphId = host.replace("neptune-graph://", "")
             self.client = NeptuneAnalyticsGraph(graphId)
-            logger.debug('Creating Neptune Graph session for %s', host)
+            logger.debug("Creating Neptune Graph session for %s", host)
         else:
             raise ValueError(
-                'You must provide an endpoint to create a NeptuneDriver as either neptune-db://<endpoint> or neptune-graph://<graphid>'
+                "You must provide an endpoint to create a NeptuneDriver as either neptune-db://<endpoint> or neptune-graph://<graphid>"
             )
 
         if not aoss_host:
-            raise ValueError('You must provide an AOSS endpoint to create an OpenSearch driver.')
+            raise ValueError(
+                "You must provide an AOSS endpoint to create an OpenSearch driver."
+            )
 
         session = boto3.Session()
         self.aoss_client = OpenSearch(
-            hosts=[{'host': aoss_host, 'port': aoss_port}],
+            hosts=[{"host": aoss_host, "port": aoss_port}],
             http_auth=Urllib3AWSV4SignerAuth(
-                session.get_credentials(), session.region_name, 'aoss'
+                session.get_credentials(), session.region_name, "aoss"
             ),
             use_ssl=True,
             verify_certs=True,
@@ -171,24 +179,24 @@ class NeptuneDriver(GraphDriver):
                     for i, item in enumerate(v):
                         if isinstance(item, datetime.datetime):
                             v[i] = item.isoformat()
-                            query = str(query).replace(f'${k}', f'datetime(${k})')
+                            query = str(query).replace(f"${k}", f"datetime(${k})")
                         if isinstance(item, dict):
                             query = self._sanitize_parameters(query, v[i])
 
                     # If the list contains datetime objects, we need to wrap each element with datetime()
-                    if any(isinstance(item, str) and 'T' in item for item in v):
+                    if any(isinstance(item, str) and "T" in item for item in v):
                         # Create a new list expression with datetime() wrapped around each element
                         datetime_list = (
-                            '['
-                            + ', '.join(
+                            "["
+                            + ", ".join(
                                 f'datetime("{item}")'
-                                if isinstance(item, str) and 'T' in item
+                                if isinstance(item, str) and "T" in item
                                 else repr(item)
                                 for item in v
                             )
-                            + ']'
+                            + "]"
                         )
-                        query = str(query).replace(f'${k}', datetime_list)
+                        query = str(query).replace(f"${k}", datetime_list)
                 elif isinstance(v, dict):
                     query = self._sanitize_parameters(query, v)
             return query
@@ -209,9 +217,9 @@ class NeptuneDriver(GraphDriver):
         try:
             result = self.client.query(cypher_query_, params=params)
         except Exception as e:
-            logger.error('Query: %s', cypher_query_)
-            logger.error('Parameters: %s', params)
-            logger.error('Error executing query: %s', e)
+            logger.error("Query: %s", cypher_query_)
+            logger.error("Parameters: %s", params)
+            logger.error("Error executing query: %s", e)
             raise e
 
         return result, None, None
@@ -223,7 +231,7 @@ class NeptuneDriver(GraphDriver):
         return self.client.client.close()
 
     async def _delete_all_data(self) -> Any:
-        return await self.execute_query('MATCH (n) DETACH DELETE n')
+        return await self.execute_query("MATCH (n) DETACH DELETE n")
 
     def delete_all_indexes(self) -> Coroutine[Any, Any, Any]:
         return self.delete_all_indexes_impl()
@@ -234,40 +242,46 @@ class NeptuneDriver(GraphDriver):
 
     async def create_aoss_indices(self):
         for index in aoss_indices:
-            index_name = index['index_name']
+            index_name = index["index_name"]
             client = self.aoss_client
             if not client.indices.exists(index=index_name):
-                client.indices.create(index=index_name, body=index['body'])
+                client.indices.create(index=index_name, body=index["body"])
         # Sleep for 1 minute to let the index creation complete
         await asyncio.sleep(60)
 
     async def delete_aoss_indices(self):
         for index in aoss_indices:
-            index_name = index['index_name']
+            index_name = index["index_name"]
             client = self.aoss_client
             if client.indices.exists(index=index_name):
                 client.indices.delete(index=index_name)
 
-    def run_aoss_query(self, name: str, query_text: str, limit: int = 10) -> dict[str, Any]:
+    def run_aoss_query(
+        self, name: str, query_text: str, limit: int = 10
+    ) -> dict[str, Any]:
         for index in aoss_indices:
-            if name.lower() == index['index_name']:
-                index['query']['query']['multi_match']['query'] = query_text
-                query = {'size': limit, 'query': index['query']}
-                resp = self.aoss_client.search(body=query['query'], index=index['index_name'])
+            if name.lower() == index["index_name"]:
+                index["query"]["query"]["multi_match"]["query"] = query_text
+                query = {"size": limit, "query": index["query"]}
+                resp = self.aoss_client.search(
+                    body=query["query"], index=index["index_name"]
+                )
                 return resp
         return {}
 
     def save_to_aoss(self, name: str, data: list[dict]) -> int:
         for index in aoss_indices:
-            if name.lower() == index['index_name']:
+            if name.lower() == index["index_name"]:
                 to_index = []
                 for d in data:
-                    item = {'_index': name, '_id': d['uuid']}
-                    for p in index['body']['mappings']['properties']:
+                    item = {"_index": name, "_id": d["uuid"]}
+                    for p in index["body"]["mappings"]["properties"]:
                         if p in d:
                             item[p] = d[p]
                     to_index.append(item)
-                success, failed = helpers.bulk(self.aoss_client, to_index, stats_only=True)
+                success, failed = helpers.bulk(
+                    self.aoss_client, to_index, stats_only=True
+                )
                 return success
 
         return 0

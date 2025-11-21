@@ -26,40 +26,44 @@ from .snippets import summary_instructions
 
 
 class ExtractedEntity(BaseModel):
-    name: str = Field(..., description='Name of the extracted entity')
+    name: str = Field(..., description="Name of the extracted entity")
     entity_type_id: int = Field(
-        description='ID of the classified entity type. '
-        'Must be one of the provided entity_type_id integers.',
+        description="ID of the classified entity type. "
+        "Must be one of the provided entity_type_id integers.",
     )
 
 
 class ExtractedEntities(BaseModel):
-    extracted_entities: list[ExtractedEntity] = Field(..., description='List of extracted entities')
+    extracted_entities: list[ExtractedEntity] = Field(
+        ..., description="List of extracted entities"
+    )
 
 
 class MissedEntities(BaseModel):
-    missed_entities: list[str] = Field(..., description="Names of entities that weren't extracted")
+    missed_entities: list[str] = Field(
+        ..., description="Names of entities that weren't extracted"
+    )
 
 
 class EntityClassificationTriple(BaseModel):
-    uuid: str = Field(description='UUID of the entity')
-    name: str = Field(description='Name of the entity')
+    uuid: str = Field(description="UUID of the entity")
+    name: str = Field(description="Name of the entity")
     entity_type: str | None = Field(
         default=None,
-        description='Type of the entity. Must be one of the provided types or None',
+        description="Type of the entity. Must be one of the provided types or None",
     )
 
 
 class EntityClassification(BaseModel):
     entity_classifications: list[EntityClassificationTriple] = Field(
-        ..., description='List of entities classification triples.'
+        ..., description="List of entities classification triples."
     )
 
 
 class EntitySummary(BaseModel):
     summary: str = Field(
         ...,
-        description=f'Summary containing the important information about the entity. Under {MAX_SUMMARY_CHARS} characters.',
+        description=f"Summary containing the important information about the entity. Under {MAX_SUMMARY_CHARS} characters.",
     )
 
 
@@ -89,15 +93,15 @@ def extract_message(context: dict[str, Any]) -> list[Message]:
 
     user_prompt = f"""
 <ENTITY TYPES>
-{context['entity_types']}
+{context["entity_types"]}
 </ENTITY TYPES>
 
 <PREVIOUS MESSAGES>
-{to_prompt_json([ep for ep in context['previous_episodes']])}
+{to_prompt_json([ep for ep in context["previous_episodes"]])}
 </PREVIOUS MESSAGES>
 
 <CURRENT MESSAGE>
-{context['episode_content']}
+{context["episode_content"]}
 </CURRENT MESSAGE>
 
 Instructions:
@@ -124,11 +128,11 @@ reference entities. Only extract distinct entities from the CURRENT MESSAGE. Don
 5. **Formatting**:
    - Be **explicit and unambiguous** in naming entities (e.g., use full names when available).
 
-{context['custom_prompt']}
+{context["custom_prompt"]}
 """
     return [
-        Message(role='system', content=sys_prompt),
-        Message(role='user', content=user_prompt),
+        Message(role="system", content=sys_prompt),
+        Message(role="user", content=user_prompt),
     ]
 
 
@@ -138,17 +142,17 @@ def extract_json(context: dict[str, Any]) -> list[Message]:
 
     user_prompt = f"""
 <ENTITY TYPES>
-{context['entity_types']}
+{context["entity_types"]}
 </ENTITY TYPES>
 
 <SOURCE DESCRIPTION>:
-{context['source_description']}
+{context["source_description"]}
 </SOURCE DESCRIPTION>
 <JSON>
-{context['episode_content']}
+{context["episode_content"]}
 </JSON>
 
-{context['custom_prompt']}
+{context["custom_prompt"]}
 
 Given the above source description and JSON, extract relevant entities from the provided JSON.
 For each entity extracted, also determine its entity type based on the provided ENTITY TYPES and their descriptions.
@@ -160,8 +164,8 @@ Guidelines:
 3. Do NOT extract any properties that contain dates
 """
     return [
-        Message(role='system', content=sys_prompt),
-        Message(role='user', content=user_prompt),
+        Message(role="system", content=sys_prompt),
+        Message(role="user", content=user_prompt),
     ]
 
 
@@ -171,18 +175,18 @@ def extract_text(context: dict[str, Any]) -> list[Message]:
 
     user_prompt = f"""
 <ENTITY TYPES>
-{context['entity_types']}
+{context["entity_types"]}
 </ENTITY TYPES>
 
 <TEXT>
-{context['episode_content']}
+{context["episode_content"]}
 </TEXT>
 
 Given the above text, extract entities from the TEXT that are explicitly or implicitly mentioned.
 For each entity extracted, also determine its entity type based on the provided ENTITY TYPES and their descriptions.
 Indicate the classified entity type by providing its entity_type_id.
 
-{context['custom_prompt']}
+{context["custom_prompt"]}
 
 Guidelines:
 1. Extract significant entities, concepts, or actors mentioned in the conversation.
@@ -191,8 +195,8 @@ Guidelines:
 4. Be as explicit as possible in your node names, using full names and avoiding abbreviations.
 """
     return [
-        Message(role='system', content=sys_prompt),
-        Message(role='user', content=user_prompt),
+        Message(role="system", content=sys_prompt),
+        Message(role="user", content=user_prompt),
     ]
 
 
@@ -201,22 +205,22 @@ def reflexion(context: dict[str, Any]) -> list[Message]:
 
     user_prompt = f"""
 <PREVIOUS MESSAGES>
-{to_prompt_json([ep for ep in context['previous_episodes']])}
+{to_prompt_json([ep for ep in context["previous_episodes"]])}
 </PREVIOUS MESSAGES>
 <CURRENT MESSAGE>
-{context['episode_content']}
+{context["episode_content"]}
 </CURRENT MESSAGE>
 
 <EXTRACTED ENTITIES>
-{context['extracted_entities']}
+{context["extracted_entities"]}
 </EXTRACTED ENTITIES>
 
 Given the above previous messages, current message, and list of extracted entities; determine if any entities haven't been
 extracted.
 """
     return [
-        Message(role='system', content=sys_prompt),
-        Message(role='user', content=user_prompt),
+        Message(role="system", content=sys_prompt),
+        Message(role="user", content=user_prompt),
     ]
 
 
@@ -225,18 +229,18 @@ def classify_nodes(context: dict[str, Any]) -> list[Message]:
 
     user_prompt = f"""
     <PREVIOUS MESSAGES>
-    {to_prompt_json([ep for ep in context['previous_episodes']])}
+    {to_prompt_json([ep for ep in context["previous_episodes"]])}
     </PREVIOUS MESSAGES>
     <CURRENT MESSAGE>
-    {context['episode_content']}
+    {context["episode_content"]}
     </CURRENT MESSAGE>
 
     <EXTRACTED ENTITIES>
-    {context['extracted_entities']}
+    {context["extracted_entities"]}
     </EXTRACTED ENTITIES>
 
     <ENTITY TYPES>
-    {context['entity_types']}
+    {context["entity_types"]}
     </ENTITY TYPES>
 
     Given the above conversation, extracted entities, and provided entity types and their descriptions, classify the extracted entities.
@@ -247,19 +251,19 @@ def classify_nodes(context: dict[str, Any]) -> list[Message]:
     3. If none of the provided entity types accurately classify an extracted node, the type should be set to None
 """
     return [
-        Message(role='system', content=sys_prompt),
-        Message(role='user', content=user_prompt),
+        Message(role="system", content=sys_prompt),
+        Message(role="user", content=user_prompt),
     ]
 
 
 def extract_attributes(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are a helpful assistant that extracts entity properties from the provided text.',
+            role="system",
+            content="You are a helpful assistant that extracts entity properties from the provided text.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
         Given the MESSAGES and the following ENTITY, update any of its attributes based on the information provided
         in MESSAGES. Use the provided attribute descriptions to better understand how each attribute should be determined.
@@ -269,12 +273,12 @@ def extract_attributes(context: dict[str, Any]) -> list[Message]:
         2. Only use the provided MESSAGES and ENTITY to set attribute values.
 
         <MESSAGES>
-        {to_prompt_json(context['previous_episodes'])}
-        {to_prompt_json(context['episode_content'])}
+        {to_prompt_json(context["previous_episodes"])}
+        {to_prompt_json(context["episode_content"])}
         </MESSAGES>
 
         <ENTITY>
-        {context['node']}
+        {context["node"]}
         </ENTITY>
         """,
         ),
@@ -284,11 +288,11 @@ def extract_attributes(context: dict[str, Any]) -> list[Message]:
 def extract_summary(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are a helpful assistant that extracts entity summaries from the provided text.',
+            role="system",
+            content="You are a helpful assistant that extracts entity summaries from the provided text.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
         Given the MESSAGES and the ENTITY, update the summary that combines relevant information about the entity
         from the messages and relevant information from the existing summary.
@@ -296,12 +300,12 @@ def extract_summary(context: dict[str, Any]) -> list[Message]:
         {summary_instructions}
 
         <MESSAGES>
-        {to_prompt_json(context['previous_episodes'])}
-        {to_prompt_json(context['episode_content'])}
+        {to_prompt_json(context["previous_episodes"])}
+        {to_prompt_json(context["episode_content"])}
         </MESSAGES>
 
         <ENTITY>
-        {context['node']}
+        {context["node"]}
         </ENTITY>
         """,
         ),
@@ -309,11 +313,11 @@ def extract_summary(context: dict[str, Any]) -> list[Message]:
 
 
 versions: Versions = {
-    'extract_message': extract_message,
-    'extract_json': extract_json,
-    'extract_text': extract_text,
-    'reflexion': reflexion,
-    'extract_summary': extract_summary,
-    'classify_nodes': classify_nodes,
-    'extract_attributes': extract_attributes,
+    "extract_message": extract_message,
+    "extract_json": extract_json,
+    "extract_text": extract_text,
+    "reflexion": reflexion,
+    "extract_summary": extract_summary,
+    "classify_nodes": classify_nodes,
+    "extract_attributes": extract_attributes,
 }

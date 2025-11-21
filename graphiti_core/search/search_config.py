@@ -30,51 +30,51 @@ DEFAULT_SEARCH_LIMIT = 10
 
 
 class EdgeSearchMethod(Enum):
-    cosine_similarity = 'cosine_similarity'
-    bm25 = 'bm25'
-    bfs = 'breadth_first_search'
+    cosine_similarity = "cosine_similarity"
+    bm25 = "bm25"
+    bfs = "breadth_first_search"
 
 
 class NodeSearchMethod(Enum):
-    cosine_similarity = 'cosine_similarity'
-    bm25 = 'bm25'
-    bfs = 'breadth_first_search'
+    cosine_similarity = "cosine_similarity"
+    bm25 = "bm25"
+    bfs = "breadth_first_search"
 
 
 class EpisodeSearchMethod(Enum):
-    bm25 = 'bm25'
+    bm25 = "bm25"
 
 
 class CommunitySearchMethod(Enum):
-    cosine_similarity = 'cosine_similarity'
-    bm25 = 'bm25'
+    cosine_similarity = "cosine_similarity"
+    bm25 = "bm25"
 
 
 class EdgeReranker(Enum):
-    rrf = 'reciprocal_rank_fusion'
-    node_distance = 'node_distance'
-    episode_mentions = 'episode_mentions'
-    mmr = 'mmr'
-    cross_encoder = 'cross_encoder'
+    rrf = "reciprocal_rank_fusion"
+    node_distance = "node_distance"
+    episode_mentions = "episode_mentions"
+    mmr = "mmr"
+    cross_encoder = "cross_encoder"
 
 
 class NodeReranker(Enum):
-    rrf = 'reciprocal_rank_fusion'
-    node_distance = 'node_distance'
-    episode_mentions = 'episode_mentions'
-    mmr = 'mmr'
-    cross_encoder = 'cross_encoder'
+    rrf = "reciprocal_rank_fusion"
+    node_distance = "node_distance"
+    episode_mentions = "episode_mentions"
+    mmr = "mmr"
+    cross_encoder = "cross_encoder"
 
 
 class EpisodeReranker(Enum):
-    rrf = 'reciprocal_rank_fusion'
-    cross_encoder = 'cross_encoder'
+    rrf = "reciprocal_rank_fusion"
+    cross_encoder = "cross_encoder"
 
 
 class CommunityReranker(Enum):
-    rrf = 'reciprocal_rank_fusion'
-    mmr = 'mmr'
-    cross_encoder = 'cross_encoder'
+    rrf = "reciprocal_rank_fusion"
+    mmr = "mmr"
+    cross_encoder = "cross_encoder"
 
 
 class EdgeSearchConfig(BaseModel):

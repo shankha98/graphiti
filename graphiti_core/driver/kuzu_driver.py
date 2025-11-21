@@ -96,7 +96,7 @@ class KuzuDriver(GraphDriver):
 
     def __init__(
         self,
-        db: str = ':memory:',
+        db: str = ":memory:",
         max_concurrent_queries: int = 1,
     ):
         super().__init__()
@@ -104,21 +104,25 @@ class KuzuDriver(GraphDriver):
 
         self.setup_schema()
 
-        self.client = kuzu.AsyncConnection(self.db, max_concurrent_queries=max_concurrent_queries)
+        self.client = kuzu.AsyncConnection(
+            self.db, max_concurrent_queries=max_concurrent_queries
+        )
 
     async def execute_query(
         self, cypher_query_: str, **kwargs: Any
     ) -> tuple[list[dict[str, Any]] | list[list[dict[str, Any]]], None, None]:
         params = {k: v for k, v in kwargs.items() if v is not None}
         # Kuzu does not support these parameters.
-        params.pop('database_', None)
-        params.pop('routing_', None)
+        params.pop("database_", None)
+        params.pop("routing_", None)
 
         try:
             results = await self.client.execute(cypher_query_, parameters=params)
         except Exception as e:
-            params = {k: (v[:5] if isinstance(v, list) else v) for k, v in params.items()}
-            logger.error(f'Error executing Kuzu query: {e}\n{cypher_query_}\n{params}')
+            params = {
+                k: (v[:5] if isinstance(v, list) else v) for k, v in params.items()
+            }
+            logger.error(f"Error executing Kuzu query: {e}\n{cypher_query_}\n{params}")
             raise
 
         if not results:

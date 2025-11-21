@@ -38,15 +38,15 @@ _MINHASH_BAND_SIZE = 4
 
 def _normalize_string_exact(name: str) -> str:
     """Lowercase text and collapse whitespace so equal names map to the same key."""
-    normalized = re.sub(r'[\s]+', ' ', name.lower())
+    normalized = re.sub(r"[\s]+", " ", name.lower())
     return normalized.strip()
 
 
 def _normalize_name_for_fuzzy(name: str) -> str:
     """Produce a fuzzier form that keeps alphanumerics and apostrophes for n-gram shingles."""
-    normalized = re.sub(r"[^a-z0-9' ]", ' ', _normalize_string_exact(name))
+    normalized = re.sub(r"[^a-z0-9' ]", " ", _normalize_string_exact(name))
     normalized = normalized.strip()
-    return re.sub(r'[\s]+', ' ', normalized)
+    return re.sub(r"[\s]+", " ", normalized)
 
 
 def _name_entropy(normalized_name: str) -> float:
@@ -61,7 +61,7 @@ def _name_entropy(normalized_name: str) -> float:
         return 0.0
 
     counts: dict[str, int] = {}
-    for char in normalized_name.replace(' ', ''):
+    for char in normalized_name.replace(" ", ""):
         counts[char] = counts.get(char, 0) + 1
 
     total = sum(counts.values())
@@ -87,7 +87,7 @@ def _has_high_entropy(normalized_name: str) -> bool:
 
 def _shingles(normalized_name: str) -> set[str]:
     """Create 3-gram shingles from the normalized name for MinHash calculations."""
-    cleaned = normalized_name.replace(' ', '')
+    cleaned = normalized_name.replace(" ", "")
     if len(cleaned) < 2:
         return {cleaned} if cleaned else set()
 
@@ -96,8 +96,8 @@ def _shingles(normalized_name: str) -> set[str]:
 
 def _hash_shingle(shingle: str, seed: int) -> int:
     """Generate a deterministic 64-bit hash for a shingle given the permutation seed."""
-    digest = blake2b(f'{seed}:{shingle}'.encode(), digest_size=8)
-    return int.from_bytes(digest.digest(), 'big')
+    digest = blake2b(f"{seed}:{shingle}".encode(), digest_size=8)
+    return int.from_bytes(digest.digest(), "big")
 
 
 def _minhash_signature(shingles: Iterable[str]) -> tuple[int, ...]:
@@ -247,16 +247,16 @@ def _resolve_with_similarity(
 
 
 __all__ = [
-    'DedupCandidateIndexes',
-    'DedupResolutionState',
-    '_normalize_string_exact',
-    '_normalize_name_for_fuzzy',
-    '_has_high_entropy',
-    '_minhash_signature',
-    '_lsh_bands',
-    '_jaccard_similarity',
-    '_cached_shingles',
-    '_FUZZY_JACCARD_THRESHOLD',
-    '_build_candidate_indexes',
-    '_resolve_with_similarity',
+    "DedupCandidateIndexes",
+    "DedupResolutionState",
+    "_normalize_string_exact",
+    "_normalize_name_for_fuzzy",
+    "_has_high_entropy",
+    "_minhash_signature",
+    "_lsh_bands",
+    "_jaccard_similarity",
+    "_cached_shingles",
+    "_FUZZY_JACCARD_THRESHOLD",
+    "_build_candidate_indexes",
+    "_resolve_with_similarity",
 ]

@@ -25,18 +25,18 @@ from .prompt_helpers import to_prompt_json
 class EdgeDuplicate(BaseModel):
     duplicate_facts: list[int] = Field(
         ...,
-        description='List of idx values of any duplicate facts. If no duplicate facts are found, default to empty list.',
+        description="List of idx values of any duplicate facts. If no duplicate facts are found, default to empty list.",
     )
     contradicted_facts: list[int] = Field(
         ...,
-        description='List of idx values of facts that should be invalidated. If no facts should be invalidated, the list should be empty.',
+        description="List of idx values of facts that should be invalidated. If no facts should be invalidated, the list should be empty.",
     )
-    fact_type: str = Field(..., description='One of the provided fact types or DEFAULT')
+    fact_type: str = Field(..., description="One of the provided fact types or DEFAULT")
 
 
 class UniqueFact(BaseModel):
-    uuid: str = Field(..., description='unique identifier of the fact')
-    fact: str = Field(..., description='fact of a unique edge')
+    uuid: str = Field(..., description="unique identifier of the fact")
+    fact: str = Field(..., description="fact of a unique edge")
 
 
 class UniqueFacts(BaseModel):
@@ -58,20 +58,20 @@ class Versions(TypedDict):
 def edge(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are a helpful assistant that de-duplicates edges from edge lists.',
+            role="system",
+            content="You are a helpful assistant that de-duplicates edges from edge lists.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
         Given the following context, determine whether the New Edge represents any of the edges in the list of Existing Edges.
 
         <EXISTING EDGES>
-        {to_prompt_json(context['related_edges'])}
+        {to_prompt_json(context["related_edges"])}
         </EXISTING EDGES>
 
         <NEW EDGE>
-        {to_prompt_json(context['extracted_edges'])}
+        {to_prompt_json(context["extracted_edges"])}
         </NEW EDGE>
 
         Task:
@@ -89,16 +89,16 @@ def edge(context: dict[str, Any]) -> list[Message]:
 def edge_list(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are a helpful assistant that de-duplicates edges from edge lists.',
+            role="system",
+            content="You are a helpful assistant that de-duplicates edges from edge lists.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
         Given the following context, find all of the duplicates in a list of facts:
 
         Facts:
-        {to_prompt_json(context['edges'])}
+        {to_prompt_json(context["edges"])}
 
         Task:
         If any facts in Facts is a duplicate of another fact, return a new fact with one of their uuid's.
@@ -117,12 +117,12 @@ def edge_list(context: dict[str, Any]) -> list[Message]:
 def resolve_edge(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are a helpful assistant that de-duplicates facts from fact lists and determines which existing '
-            'facts are contradicted by the new fact.',
+            role="system",
+            content="You are a helpful assistant that de-duplicates facts from fact lists and determines which existing "
+            "facts are contradicted by the new fact.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
         Task:
         You will receive TWO separate lists of facts. Each list uses 'idx' as its index field, starting from 0.
@@ -152,23 +152,27 @@ def resolve_edge(context: dict[str, Any]) -> list[Message]:
             Do not mark these facts as duplicates.
 
         <FACT TYPES>
-        {context['edge_types']}
+        {context["edge_types"]}
         </FACT TYPES>
 
         <EXISTING FACTS>
-        {context['existing_edges']}
+        {context["existing_edges"]}
         </EXISTING FACTS>
 
         <FACT INVALIDATION CANDIDATES>
-        {context['edge_invalidation_candidates']}
+        {context["edge_invalidation_candidates"]}
         </FACT INVALIDATION CANDIDATES>
 
         <NEW FACT>
-        {context['new_edge']}
+        {context["new_edge"]}
         </NEW FACT>
         """,
         ),
     ]
 
 
-versions: Versions = {'edge': edge, 'edge_list': edge_list, 'resolve_edge': resolve_edge}
+versions: Versions = {
+    "edge": edge,
+    "edge_list": edge_list,
+    "resolve_edge": resolve_edge,
+}

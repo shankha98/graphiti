@@ -25,12 +25,12 @@ def mock_llm_client():
 @pytest.fixture
 def mock_extracted_edge():
     return EntityEdge(
-        source_node_uuid='source_uuid',
-        target_node_uuid='target_uuid',
-        name='test_edge',
-        group_id='group_1',
-        fact='Test fact',
-        episodes=['episode_1'],
+        source_node_uuid="source_uuid",
+        target_node_uuid="target_uuid",
+        name="test_edge",
+        group_id="group_1",
+        fact="Test fact",
+        episodes=["episode_1"],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
         invalid_at=None,
@@ -41,12 +41,12 @@ def mock_extracted_edge():
 def mock_related_edges():
     return [
         EntityEdge(
-            source_node_uuid='source_uuid_2',
-            target_node_uuid='target_uuid_2',
-            name='related_edge',
-            group_id='group_1',
-            fact='Related fact',
-            episodes=['episode_2'],
+            source_node_uuid="source_uuid_2",
+            target_node_uuid="target_uuid_2",
+            name="related_edge",
+            group_id="group_1",
+            fact="Related fact",
+            episodes=["episode_2"],
             created_at=datetime.now(timezone.utc) - timedelta(days=1),
             valid_at=datetime.now(timezone.utc) - timedelta(days=1),
             invalid_at=None,
@@ -58,12 +58,12 @@ def mock_related_edges():
 def mock_existing_edges():
     return [
         EntityEdge(
-            source_node_uuid='source_uuid_3',
-            target_node_uuid='target_uuid_3',
-            name='existing_edge',
-            group_id='group_1',
-            fact='Existing fact',
-            episodes=['episode_3'],
+            source_node_uuid="source_uuid_3",
+            target_node_uuid="target_uuid_3",
+            name="existing_edge",
+            group_id="group_1",
+            fact="Existing fact",
+            episodes=["episode_3"],
             created_at=datetime.now(timezone.utc) - timedelta(days=2),
             valid_at=datetime.now(timezone.utc) - timedelta(days=2),
             invalid_at=None,
@@ -74,13 +74,13 @@ def mock_existing_edges():
 @pytest.fixture
 def mock_current_episode():
     return EpisodicNode(
-        uuid='episode_1',
-        content='Current episode content',
+        uuid="episode_1",
+        content="Current episode content",
         valid_at=datetime.now(timezone.utc),
-        name='Current Episode',
-        group_id='group_1',
-        source='message',
-        source_description='Test source description',
+        name="Current Episode",
+        group_id="group_1",
+        source="message",
+        source_description="Test source description",
     )
 
 
@@ -88,19 +88,19 @@ def mock_current_episode():
 def mock_previous_episodes():
     return [
         EpisodicNode(
-            uuid='episode_2',
-            content='Previous episode content',
+            uuid="episode_2",
+            content="Previous episode content",
             valid_at=datetime.now(timezone.utc) - timedelta(days=1),
-            name='Previous Episode',
-            group_id='group_1',
-            source='message',
-            source_description='Test source description',
+            name="Previous Episode",
+            group_id="group_1",
+            source="message",
+            source_description="Test source description",
         )
     ]
 
 
 # Run the tests
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])
 
 
@@ -111,12 +111,12 @@ async def test_resolve_extracted_edge_exact_fact_short_circuit(
     mock_current_episode,
 ):
     extracted = EntityEdge(
-        source_node_uuid='source_uuid',
-        target_node_uuid='target_uuid',
-        name='test_edge',
-        group_id='group_1',
-        fact='Related fact',
-        episodes=['episode_1'],
+        source_node_uuid="source_uuid",
+        target_node_uuid="target_uuid",
+        name="test_edge",
+        group_id="group_1",
+        fact="Related fact",
+        episodes=["episode_1"],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
         invalid_at=None,
@@ -124,12 +124,12 @@ async def test_resolve_extracted_edge_exact_fact_short_circuit(
 
     related_edges = [
         EntityEdge(
-            source_node_uuid='source_uuid',
-            target_node_uuid='target_uuid',
-            name='related_edge',
-            group_id='group_1',
-            fact=' related FACT  ',
-            episodes=['episode_2'],
+            source_node_uuid="source_uuid",
+            target_node_uuid="target_uuid",
+            name="related_edge",
+            group_id="group_1",
+            fact=" related FACT  ",
+            episodes=["episode_2"],
             created_at=datetime.now(timezone.utc) - timedelta(days=1),
             valid_at=None,
             invalid_at=None,
@@ -160,21 +160,23 @@ class OccurredAtEdge(BaseModel):
 async def test_resolve_extracted_edges_resets_unmapped_names(monkeypatch):
     from graphiti_core.utils.maintenance import edge_operations as edge_ops
 
-    monkeypatch.setattr(edge_ops, 'create_entity_edge_embeddings', AsyncMock(return_value=None))
-    monkeypatch.setattr(EntityEdge, 'get_between_nodes', AsyncMock(return_value=[]))
+    monkeypatch.setattr(
+        edge_ops, "create_entity_edge_embeddings", AsyncMock(return_value=None)
+    )
+    monkeypatch.setattr(EntityEdge, "get_between_nodes", AsyncMock(return_value=[]))
 
     async def immediate_gather(*aws, max_coroutines=None):
         return [await aw for aw in aws]
 
-    monkeypatch.setattr(edge_ops, 'semaphore_gather', immediate_gather)
-    monkeypatch.setattr(edge_ops, 'search', AsyncMock(return_value=SearchResults()))
+    monkeypatch.setattr(edge_ops, "semaphore_gather", immediate_gather)
+    monkeypatch.setattr(edge_ops, "search", AsyncMock(return_value=SearchResults()))
 
     llm_client = MagicMock()
     llm_client.generate_response = AsyncMock(
         return_value={
-            'duplicate_facts': [],
-            'contradicted_facts': [],
-            'fact_type': 'DEFAULT',
+            "duplicate_facts": [],
+            "contradicted_facts": [],
+            "fact_type": "DEFAULT",
         }
     )
 
@@ -186,24 +188,24 @@ async def test_resolve_extracted_edges_resets_unmapped_names(monkeypatch):
     )
 
     source_node = EntityNode(
-        uuid='source_uuid',
-        name='Document Node',
-        group_id='group_1',
-        labels=['Document'],
+        uuid="source_uuid",
+        name="Document Node",
+        group_id="group_1",
+        labels=["Document"],
     )
     target_node = EntityNode(
-        uuid='target_uuid',
-        name='Topic Node',
-        group_id='group_1',
-        labels=['Topic'],
+        uuid="target_uuid",
+        name="Topic Node",
+        group_id="group_1",
+        labels=["Topic"],
     )
 
     extracted_edge = EntityEdge(
         source_node_uuid=source_node.uuid,
         target_node_uuid=target_node.uuid,
-        name='OCCURRED_AT',
-        group_id='group_1',
-        fact='Document occurred at somewhere',
+        name="OCCURRED_AT",
+        group_id="group_1",
+        fact="Document occurred at somewhere",
         episodes=[],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
@@ -211,17 +213,17 @@ async def test_resolve_extracted_edges_resets_unmapped_names(monkeypatch):
     )
 
     episode = EpisodicNode(
-        uuid='episode_uuid',
-        name='Episode',
-        group_id='group_1',
-        source='message',
-        source_description='desc',
-        content='Episode content',
+        uuid="episode_uuid",
+        name="Episode",
+        group_id="group_1",
+        source="message",
+        source_description="desc",
+        content="Episode content",
         valid_at=datetime.now(timezone.utc),
     )
 
-    edge_types = {'OCCURRED_AT': OccurredAtEdge}
-    edge_type_map = {('Event', 'Entity'): ['OCCURRED_AT']}
+    edge_types = {"OCCURRED_AT": OccurredAtEdge}
+    edge_type_map = {("Event", "Entity"): ["OCCURRED_AT"]}
 
     resolved_edges, invalidated_edges = await resolve_extracted_edges(
         clients,
@@ -240,21 +242,23 @@ async def test_resolve_extracted_edges_resets_unmapped_names(monkeypatch):
 async def test_resolve_extracted_edges_keeps_unknown_names(monkeypatch):
     from graphiti_core.utils.maintenance import edge_operations as edge_ops
 
-    monkeypatch.setattr(edge_ops, 'create_entity_edge_embeddings', AsyncMock(return_value=None))
-    monkeypatch.setattr(EntityEdge, 'get_between_nodes', AsyncMock(return_value=[]))
+    monkeypatch.setattr(
+        edge_ops, "create_entity_edge_embeddings", AsyncMock(return_value=None)
+    )
+    monkeypatch.setattr(EntityEdge, "get_between_nodes", AsyncMock(return_value=[]))
 
     async def immediate_gather(*aws, max_coroutines=None):
         return [await aw for aw in aws]
 
-    monkeypatch.setattr(edge_ops, 'semaphore_gather', immediate_gather)
-    monkeypatch.setattr(edge_ops, 'search', AsyncMock(return_value=SearchResults()))
+    monkeypatch.setattr(edge_ops, "semaphore_gather", immediate_gather)
+    monkeypatch.setattr(edge_ops, "search", AsyncMock(return_value=SearchResults()))
 
     llm_client = MagicMock()
     llm_client.generate_response = AsyncMock(
         return_value={
-            'duplicate_facts': [],
-            'contradicted_facts': [],
-            'fact_type': 'DEFAULT',
+            "duplicate_facts": [],
+            "contradicted_facts": [],
+            "fact_type": "DEFAULT",
         }
     )
 
@@ -266,24 +270,24 @@ async def test_resolve_extracted_edges_keeps_unknown_names(monkeypatch):
     )
 
     source_node = EntityNode(
-        uuid='source_uuid',
-        name='User Node',
-        group_id='group_1',
-        labels=['User'],
+        uuid="source_uuid",
+        name="User Node",
+        group_id="group_1",
+        labels=["User"],
     )
     target_node = EntityNode(
-        uuid='target_uuid',
-        name='Topic Node',
-        group_id='group_1',
-        labels=['Topic'],
+        uuid="target_uuid",
+        name="Topic Node",
+        group_id="group_1",
+        labels=["Topic"],
     )
 
     extracted_edge = EntityEdge(
         source_node_uuid=source_node.uuid,
         target_node_uuid=target_node.uuid,
-        name='INTERACTED_WITH',
-        group_id='group_1',
-        fact='User interacted with topic',
+        name="INTERACTED_WITH",
+        group_id="group_1",
+        fact="User interacted with topic",
         episodes=[],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
@@ -291,17 +295,17 @@ async def test_resolve_extracted_edges_keeps_unknown_names(monkeypatch):
     )
 
     episode = EpisodicNode(
-        uuid='episode_uuid',
-        name='Episode',
-        group_id='group_1',
-        source='message',
-        source_description='desc',
-        content='Episode content',
+        uuid="episode_uuid",
+        name="Episode",
+        group_id="group_1",
+        source="message",
+        source_description="desc",
+        content="Episode content",
         valid_at=datetime.now(timezone.utc),
     )
 
-    edge_types = {'OCCURRED_AT': OccurredAtEdge}
-    edge_type_map = {('Event', 'Entity'): ['OCCURRED_AT']}
+    edge_types = {"OCCURRED_AT": OccurredAtEdge}
+    edge_type_map = {("Event", "Entity"): ["OCCURRED_AT"]}
 
     resolved_edges, invalidated_edges = await resolve_extracted_edges(
         clients,
@@ -312,24 +316,24 @@ async def test_resolve_extracted_edges_keeps_unknown_names(monkeypatch):
         edge_type_map,
     )
 
-    assert resolved_edges[0].name == 'INTERACTED_WITH'
+    assert resolved_edges[0].name == "INTERACTED_WITH"
     assert invalidated_edges == []
 
 
 @pytest.mark.asyncio
 async def test_resolve_extracted_edge_rejects_unmapped_fact_type(mock_llm_client):
     mock_llm_client.generate_response.return_value = {
-        'duplicate_facts': [],
-        'contradicted_facts': [],
-        'fact_type': 'OCCURRED_AT',
+        "duplicate_facts": [],
+        "contradicted_facts": [],
+        "fact_type": "OCCURRED_AT",
     }
 
     extracted_edge = EntityEdge(
-        source_node_uuid='source_uuid',
-        target_node_uuid='target_uuid',
-        name='OCCURRED_AT',
-        group_id='group_1',
-        fact='Document occurred at somewhere',
+        source_node_uuid="source_uuid",
+        target_node_uuid="target_uuid",
+        name="OCCURRED_AT",
+        group_id="group_1",
+        fact="Document occurred at somewhere",
         episodes=[],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
@@ -337,21 +341,21 @@ async def test_resolve_extracted_edge_rejects_unmapped_fact_type(mock_llm_client
     )
 
     episode = EpisodicNode(
-        uuid='episode_uuid',
-        name='Episode',
-        group_id='group_1',
-        source='message',
-        source_description='desc',
-        content='Episode content',
+        uuid="episode_uuid",
+        name="Episode",
+        group_id="group_1",
+        source="message",
+        source_description="desc",
+        content="Episode content",
         valid_at=datetime.now(timezone.utc),
     )
 
     related_edge = EntityEdge(
-        source_node_uuid='alt_source',
-        target_node_uuid='alt_target',
-        name='OTHER',
-        group_id='group_1',
-        fact='Different fact',
+        source_node_uuid="alt_source",
+        target_node_uuid="alt_target",
+        name="OTHER",
+        group_id="group_1",
+        fact="Different fact",
         episodes=[],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
@@ -365,7 +369,7 @@ async def test_resolve_extracted_edge_rejects_unmapped_fact_type(mock_llm_client
         [],
         episode,
         edge_type_candidates={},
-        custom_edge_type_names={'OCCURRED_AT'},
+        custom_edge_type_names={"OCCURRED_AT"},
     )
 
     assert resolved_edge.name == DEFAULT_EDGE_NAME
@@ -376,17 +380,17 @@ async def test_resolve_extracted_edge_rejects_unmapped_fact_type(mock_llm_client
 @pytest.mark.asyncio
 async def test_resolve_extracted_edge_accepts_unknown_fact_type(mock_llm_client):
     mock_llm_client.generate_response.return_value = {
-        'duplicate_facts': [],
-        'contradicted_facts': [],
-        'fact_type': 'INTERACTED_WITH',
+        "duplicate_facts": [],
+        "contradicted_facts": [],
+        "fact_type": "INTERACTED_WITH",
     }
 
     extracted_edge = EntityEdge(
-        source_node_uuid='source_uuid',
-        target_node_uuid='target_uuid',
-        name='DEFAULT',
-        group_id='group_1',
-        fact='User interacted with topic',
+        source_node_uuid="source_uuid",
+        target_node_uuid="target_uuid",
+        name="DEFAULT",
+        group_id="group_1",
+        fact="User interacted with topic",
         episodes=[],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
@@ -394,21 +398,21 @@ async def test_resolve_extracted_edge_accepts_unknown_fact_type(mock_llm_client)
     )
 
     episode = EpisodicNode(
-        uuid='episode_uuid',
-        name='Episode',
-        group_id='group_1',
-        source='message',
-        source_description='desc',
-        content='Episode content',
+        uuid="episode_uuid",
+        name="Episode",
+        group_id="group_1",
+        source="message",
+        source_description="desc",
+        content="Episode content",
         valid_at=datetime.now(timezone.utc),
     )
 
     related_edge = EntityEdge(
-        source_node_uuid='source_uuid',
-        target_node_uuid='target_uuid',
-        name='DEFAULT',
-        group_id='group_1',
-        fact='User mentioned a topic',
+        source_node_uuid="source_uuid",
+        target_node_uuid="target_uuid",
+        name="DEFAULT",
+        group_id="group_1",
+        fact="User mentioned a topic",
         episodes=[],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
@@ -421,32 +425,37 @@ async def test_resolve_extracted_edge_accepts_unknown_fact_type(mock_llm_client)
         [related_edge],
         [],
         episode,
-        edge_type_candidates={'OCCURRED_AT': OccurredAtEdge},
-        custom_edge_type_names={'OCCURRED_AT'},
+        edge_type_candidates={"OCCURRED_AT": OccurredAtEdge},
+        custom_edge_type_names={"OCCURRED_AT"},
     )
 
-    assert resolved_edge.name == 'INTERACTED_WITH'
+    assert resolved_edge.name == "INTERACTED_WITH"
     assert resolved_edge.attributes == {}
     assert duplicates == []
     assert invalidated == []
 
 
 @pytest.mark.asyncio
-async def test_resolve_extracted_edge_uses_integer_indices_for_duplicates(mock_llm_client):
+async def test_resolve_extracted_edge_uses_integer_indices_for_duplicates(
+    mock_llm_client,
+):
     """Test that resolve_extracted_edge correctly uses integer indices for LLM duplicate detection."""
     # Mock LLM to return duplicate_facts with integer indices
     mock_llm_client.generate_response.return_value = {
-        'duplicate_facts': [0, 1],  # LLM identifies first two related edges as duplicates
-        'contradicted_facts': [],
-        'fact_type': 'DEFAULT',
+        "duplicate_facts": [
+            0,
+            1,
+        ],  # LLM identifies first two related edges as duplicates
+        "contradicted_facts": [],
+        "fact_type": "DEFAULT",
     }
 
     extracted_edge = EntityEdge(
-        source_node_uuid='source_uuid',
-        target_node_uuid='target_uuid',
-        name='test_edge',
-        group_id='group_1',
-        fact='User likes yoga',
+        source_node_uuid="source_uuid",
+        target_node_uuid="target_uuid",
+        name="test_edge",
+        group_id="group_1",
+        fact="User likes yoga",
         episodes=[],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
@@ -454,47 +463,47 @@ async def test_resolve_extracted_edge_uses_integer_indices_for_duplicates(mock_l
     )
 
     episode = EpisodicNode(
-        uuid='episode_uuid',
-        name='Episode',
-        group_id='group_1',
-        source='message',
-        source_description='desc',
-        content='Episode content',
+        uuid="episode_uuid",
+        name="Episode",
+        group_id="group_1",
+        source="message",
+        source_description="desc",
+        content="Episode content",
         valid_at=datetime.now(timezone.utc),
     )
 
     # Create multiple related edges - LLM should receive these with integer indices
     related_edge_0 = EntityEdge(
-        source_node_uuid='source_uuid',
-        target_node_uuid='target_uuid',
-        name='test_edge',
-        group_id='group_1',
-        fact='User enjoys yoga',
-        episodes=['episode_1'],
+        source_node_uuid="source_uuid",
+        target_node_uuid="target_uuid",
+        name="test_edge",
+        group_id="group_1",
+        fact="User enjoys yoga",
+        episodes=["episode_1"],
         created_at=datetime.now(timezone.utc) - timedelta(days=1),
         valid_at=None,
         invalid_at=None,
     )
 
     related_edge_1 = EntityEdge(
-        source_node_uuid='source_uuid',
-        target_node_uuid='target_uuid',
-        name='test_edge',
-        group_id='group_1',
-        fact='User practices yoga',
-        episodes=['episode_2'],
+        source_node_uuid="source_uuid",
+        target_node_uuid="target_uuid",
+        name="test_edge",
+        group_id="group_1",
+        fact="User practices yoga",
+        episodes=["episode_2"],
         created_at=datetime.now(timezone.utc) - timedelta(days=2),
         valid_at=None,
         invalid_at=None,
     )
 
     related_edge_2 = EntityEdge(
-        source_node_uuid='source_uuid',
-        target_node_uuid='target_uuid',
-        name='test_edge',
-        group_id='group_1',
-        fact='User loves swimming',
-        episodes=['episode_3'],
+        source_node_uuid="source_uuid",
+        target_node_uuid="target_uuid",
+        name="test_edge",
+        group_id="group_1",
+        fact="User loves swimming",
+        episodes=["episode_3"],
         created_at=datetime.now(timezone.utc) - timedelta(days=3),
         valid_at=None,
         invalid_at=None,
@@ -533,8 +542,10 @@ async def test_resolve_extracted_edges_fast_path_deduplication(monkeypatch):
     """Test that resolve_extracted_edges deduplicates exact matches before parallel processing."""
     from graphiti_core.utils.maintenance import edge_operations as edge_ops
 
-    monkeypatch.setattr(edge_ops, 'create_entity_edge_embeddings', AsyncMock(return_value=None))
-    monkeypatch.setattr(EntityEdge, 'get_between_nodes', AsyncMock(return_value=[]))
+    monkeypatch.setattr(
+        edge_ops, "create_entity_edge_embeddings", AsyncMock(return_value=None)
+    )
+    monkeypatch.setattr(EntityEdge, "get_between_nodes", AsyncMock(return_value=[]))
 
     # Track how many times resolve_extracted_edge is called
     resolve_call_count = 0
@@ -559,9 +570,9 @@ async def test_resolve_extracted_edges_fast_path_deduplication(monkeypatch):
             results.append(await aw)
         return results
 
-    monkeypatch.setattr(edge_ops, 'semaphore_gather', immediate_gather)
-    monkeypatch.setattr(edge_ops, 'search', AsyncMock(return_value=SearchResults()))
-    monkeypatch.setattr(edge_ops, 'resolve_extracted_edge', mock_resolve_extracted_edge)
+    monkeypatch.setattr(edge_ops, "semaphore_gather", immediate_gather)
+    monkeypatch.setattr(edge_ops, "search", AsyncMock(return_value=SearchResults()))
+    monkeypatch.setattr(edge_ops, "resolve_extracted_edge", mock_resolve_extracted_edge)
 
     llm_client = MagicMock()
     clients = SimpleNamespace(
@@ -572,25 +583,25 @@ async def test_resolve_extracted_edges_fast_path_deduplication(monkeypatch):
     )
 
     source_node = EntityNode(
-        uuid='source_uuid',
-        name='Assistant',
-        group_id='group_1',
-        labels=['Entity'],
+        uuid="source_uuid",
+        name="Assistant",
+        group_id="group_1",
+        labels=["Entity"],
     )
     target_node = EntityNode(
-        uuid='target_uuid',
-        name='User',
-        group_id='group_1',
-        labels=['Entity'],
+        uuid="target_uuid",
+        name="User",
+        group_id="group_1",
+        labels=["Entity"],
     )
 
     # Create 3 identical edges
     edge1 = EntityEdge(
         source_node_uuid=source_node.uuid,
         target_node_uuid=target_node.uuid,
-        name='recommends',
-        group_id='group_1',
-        fact='assistant recommends yoga poses',
+        name="recommends",
+        group_id="group_1",
+        fact="assistant recommends yoga poses",
         episodes=[],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
@@ -600,9 +611,9 @@ async def test_resolve_extracted_edges_fast_path_deduplication(monkeypatch):
     edge2 = EntityEdge(
         source_node_uuid=source_node.uuid,
         target_node_uuid=target_node.uuid,
-        name='recommends',
-        group_id='group_1',
-        fact='  Assistant Recommends YOGA Poses  ',  # Different whitespace/case
+        name="recommends",
+        group_id="group_1",
+        fact="  Assistant Recommends YOGA Poses  ",  # Different whitespace/case
         episodes=[],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
@@ -612,9 +623,9 @@ async def test_resolve_extracted_edges_fast_path_deduplication(monkeypatch):
     edge3 = EntityEdge(
         source_node_uuid=source_node.uuid,
         target_node_uuid=target_node.uuid,
-        name='recommends',
-        group_id='group_1',
-        fact='assistant recommends yoga poses',
+        name="recommends",
+        group_id="group_1",
+        fact="assistant recommends yoga poses",
         episodes=[],
         created_at=datetime.now(timezone.utc),
         valid_at=None,
@@ -622,12 +633,12 @@ async def test_resolve_extracted_edges_fast_path_deduplication(monkeypatch):
     )
 
     episode = EpisodicNode(
-        uuid='episode_uuid',
-        name='Episode',
-        group_id='group_1',
-        source='message',
-        source_description='desc',
-        content='Episode content',
+        uuid="episode_uuid",
+        name="Episode",
+        group_id="group_1",
+        source="message",
+        source_description="desc",
+        content="Episode content",
         valid_at=datetime.now(timezone.utc),
     )
 

@@ -25,7 +25,7 @@ from graphiti_core.edges import CommunityEdge, EntityEdge, EpisodicEdge
 from graphiti_core.nodes import CommunityNode, EntityNode, EpisodeType, EpisodicNode
 from tests.helpers_test import get_edge_count, get_node_count, group_id
 
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)
 
 
 def setup_logging():
@@ -38,7 +38,9 @@ def setup_logging():
     console_handler.setLevel(logging.INFO)
 
     # Create formatter
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     # Add formatter to console handler
     console_handler.setFormatter(formatter)
@@ -55,13 +57,13 @@ async def test_episodic_edge(graph_driver, mock_embedder):
 
     # Create episodic node
     episode_node = EpisodicNode(
-        name='test_episode',
+        name="test_episode",
         labels=[],
         created_at=now,
         valid_at=now,
         source=EpisodeType.message,
-        source_description='conversation message',
-        content='Alice likes Bob',
+        source_description="conversation message",
+        content="Alice likes Bob",
         entity_edges=[],
         group_id=group_id,
     )
@@ -73,10 +75,10 @@ async def test_episodic_edge(graph_driver, mock_embedder):
 
     # Create entity node
     alice_node = EntityNode(
-        name='Alice',
+        name="Alice",
         labels=[],
         created_at=now,
-        summary='Alice summary',
+        summary="Alice summary",
         group_id=group_id,
     )
     await alice_node.generate_name_embedding(mock_embedder)
@@ -126,10 +128,12 @@ async def test_episodic_edge(graph_driver, mock_embedder):
     assert retrieved[0].group_id == group_id
 
     # Get episodic node by entity node uuid
-    retrieved = await EpisodicNode.get_by_entity_node_uuid(graph_driver, alice_node.uuid)
+    retrieved = await EpisodicNode.get_by_entity_node_uuid(
+        graph_driver, alice_node.uuid
+    )
     assert len(retrieved) == 1
     assert retrieved[0].uuid == episode_node.uuid
-    assert retrieved[0].name == 'test_episode'
+    assert retrieved[0].name == "test_episode"
     assert retrieved[0].created_at == now
     assert retrieved[0].group_id == group_id
 
@@ -161,10 +165,10 @@ async def test_entity_edge(graph_driver, mock_embedder):
 
     # Create entity node
     alice_node = EntityNode(
-        name='Alice',
+        name="Alice",
         labels=[],
         created_at=now,
-        summary='Alice summary',
+        summary="Alice summary",
         group_id=group_id,
     )
     await alice_node.generate_name_embedding(mock_embedder)
@@ -176,7 +180,7 @@ async def test_entity_edge(graph_driver, mock_embedder):
 
     # Create entity node
     bob_node = EntityNode(
-        name='Bob', labels=[], created_at=now, summary='Bob summary', group_id=group_id
+        name="Bob", labels=[], created_at=now, summary="Bob summary", group_id=group_id
     )
     await bob_node.generate_name_embedding(mock_embedder)
     node_count = await get_node_count(graph_driver, [bob_node.uuid])
@@ -190,8 +194,8 @@ async def test_entity_edge(graph_driver, mock_embedder):
         source_node_uuid=alice_node.uuid,
         target_node_uuid=bob_node.uuid,
         created_at=now,
-        name='likes',
-        fact='Alice likes Bob',
+        name="likes",
+        fact="Alice likes Bob",
         episodes=[],
         expired_at=now,
         valid_at=now,
@@ -298,9 +302,9 @@ async def test_community_edge(graph_driver, mock_embedder):
 
     # Create community node
     community_node_1 = CommunityNode(
-        name='test_community_1',
+        name="test_community_1",
         group_id=group_id,
-        summary='Community A summary',
+        summary="Community A summary",
     )
     await community_node_1.generate_name_embedding(mock_embedder)
     node_count = await get_node_count(graph_driver, [community_node_1.uuid])
@@ -311,9 +315,9 @@ async def test_community_edge(graph_driver, mock_embedder):
 
     # Create community node
     community_node_2 = CommunityNode(
-        name='test_community_2',
+        name="test_community_2",
         group_id=group_id,
-        summary='Community B summary',
+        summary="Community B summary",
     )
     await community_node_2.generate_name_embedding(mock_embedder)
     node_count = await get_node_count(graph_driver, [community_node_2.uuid])
@@ -324,7 +328,11 @@ async def test_community_edge(graph_driver, mock_embedder):
 
     # Create entity node
     alice_node = EntityNode(
-        name='Alice', labels=[], created_at=now, summary='Alice summary', group_id=group_id
+        name="Alice",
+        labels=[],
+        created_at=now,
+        summary="Alice summary",
+        group_id=group_id,
     )
     await alice_node.generate_name_embedding(mock_embedder)
     node_count = await get_node_count(graph_driver, [alice_node.uuid])

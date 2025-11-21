@@ -31,9 +31,9 @@ from graphiti_core.utils.maintenance.graph_data_operations import clear_data
 
 load_dotenv()
 
-neo4j_uri = os.environ.get('NEO4J_URI') or 'bolt://localhost:7687'
-neo4j_user = os.environ.get('NEO4J_USER') or 'neo4j'
-neo4j_password = os.environ.get('NEO4J_PASSWORD') or 'password'
+neo4j_uri = os.environ.get("NEO4J_URI") or "bolt://localhost:7687"
+neo4j_user = os.environ.get("NEO4J_USER") or "neo4j"
+neo4j_password = os.environ.get("NEO4J_PASSWORD") or "password"
 
 
 def setup_logging():
@@ -46,7 +46,9 @@ def setup_logging():
     console_handler.setLevel(logging.INFO)
 
     # Create formatter
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     # Add formatter to console handler
     console_handler.setFormatter(formatter)
@@ -60,15 +62,15 @@ def setup_logging():
 class Person(BaseModel):
     """A human person, fictional or nonfictional."""
 
-    first_name: str | None = Field(..., description='First name')
-    last_name: str | None = Field(..., description='Last name')
+    first_name: str | None = Field(..., description="First name")
+    last_name: str | None = Field(..., description="Last name")
     occupation: str | None = Field(..., description="The person's work occupation")
 
 
 class City(BaseModel):
     """A city"""
 
-    country: str | None = Field(..., description='The country the city is in')
+    country: str | None = Field(..., description="The country the city is in")
 
 
 class IsPresidentOf(BaseModel):
@@ -91,20 +93,20 @@ async def main(use_bulk: bool = False):
     for i, message in enumerate(messages[3:14]):
         raw_episodes.append(
             RawEpisode(
-                name=f'Message {i}',
-                content=f'{message.speaker_name} ({message.role}): {message.content}',
+                name=f"Message {i}",
+                content=f"{message.speaker_name} ({message.role}): {message.content}",
                 reference_time=message.actual_timestamp,
                 source=EpisodeType.message,
-                source_description='Podcast Transcript',
+                source_description="Podcast Transcript",
             )
         )
     if use_bulk:
         await client.add_episode_bulk(
             raw_episodes,
             group_id=group_id,
-            entity_types={'Person': Person, 'City': City},
-            edge_types={'IS_PRESIDENT_OF': IsPresidentOf},
-            edge_type_map={('Person', 'Entity'): ['IS_PRESIDENT_OF']},
+            entity_types={"Person": Person, "City": City},
+            edge_types={"IS_PRESIDENT_OF": IsPresidentOf},
+            edge_type_map={("Person", "Entity"): ["IS_PRESIDENT_OF"]},
         )
     else:
         for i, message in enumerate(messages[3:14]):
@@ -114,14 +116,14 @@ async def main(use_bulk: bool = False):
             episode_uuids = [episode.uuid for episode in episodes]
 
             await client.add_episode(
-                name=f'Message {i}',
-                episode_body=f'{message.speaker_name} ({message.role}): {message.content}',
+                name=f"Message {i}",
+                episode_body=f"{message.speaker_name} ({message.role}): {message.content}",
                 reference_time=message.actual_timestamp,
-                source_description='Podcast Transcript',
+                source_description="Podcast Transcript",
                 group_id=group_id,
-                entity_types={'Person': Person, 'City': City},
-                edge_types={'IS_PRESIDENT_OF': IsPresidentOf},
-                edge_type_map={('Person', 'Entity'): ['PRESIDENT_OF']},
+                entity_types={"Person": Person, "City": City},
+                edge_types={"IS_PRESIDENT_OF": IsPresidentOf},
+                edge_type_map={("Person", "Entity"): ["PRESIDENT_OF"]},
                 previous_episode_uuids=episode_uuids,
             )
 

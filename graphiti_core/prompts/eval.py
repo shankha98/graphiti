@@ -23,27 +23,29 @@ from .prompt_helpers import to_prompt_json
 
 
 class QueryExpansion(BaseModel):
-    query: str = Field(..., description='query optimized for database search')
+    query: str = Field(..., description="query optimized for database search")
 
 
 class QAResponse(BaseModel):
-    ANSWER: str = Field(..., description='how Alice would answer the question')
+    ANSWER: str = Field(..., description="how Alice would answer the question")
 
 
 class EvalResponse(BaseModel):
-    is_correct: bool = Field(..., description='boolean if the answer is correct or incorrect')
+    is_correct: bool = Field(
+        ..., description="boolean if the answer is correct or incorrect"
+    )
     reasoning: str = Field(
-        ..., description='why you determined the response was correct or incorrect'
+        ..., description="why you determined the response was correct or incorrect"
     )
 
 
 class EvalAddEpisodeResults(BaseModel):
     candidate_is_worse: bool = Field(
         ...,
-        description='boolean if the baseline extraction is higher quality than the candidate extraction.',
+        description="boolean if the baseline extraction is higher quality than the candidate extraction.",
     )
     reasoning: str = Field(
-        ..., description='why you determined the response was correct or incorrect'
+        ..., description="why you determined the response was correct or incorrect"
     )
 
 
@@ -68,12 +70,12 @@ def query_expansion(context: dict[str, Any]) -> list[Message]:
     Bob is asking Alice a question, are you able to rephrase the question into a simpler one about Alice in the third person
     that maintains the relevant context?
     <QUESTION>
-    {to_prompt_json(context['query'])}
+    {to_prompt_json(context["query"])}
     </QUESTION>
     """
     return [
-        Message(role='system', content=sys_prompt),
-        Message(role='user', content=user_prompt),
+        Message(role="system", content=sys_prompt),
+        Message(role="user", content=user_prompt),
     ]
 
 
@@ -84,43 +86,41 @@ def qa_prompt(context: dict[str, Any]) -> list[Message]:
     Your task is to briefly answer the question in the way that you think Alice would answer the question.
     You are given the following entity summaries and facts to help you determine the answer to your question.
     <ENTITY_SUMMARIES>
-    {to_prompt_json(context['entity_summaries'])}
+    {to_prompt_json(context["entity_summaries"])}
     </ENTITY_SUMMARIES>
     <FACTS>
-    {to_prompt_json(context['facts'])}
+    {to_prompt_json(context["facts"])}
     </FACTS>
     <QUESTION>
-    {context['query']}
+    {context["query"]}
     </QUESTION>
     """
     return [
-        Message(role='system', content=sys_prompt),
-        Message(role='user', content=user_prompt),
+        Message(role="system", content=sys_prompt),
+        Message(role="user", content=user_prompt),
     ]
 
 
 def eval_prompt(context: dict[str, Any]) -> list[Message]:
-    sys_prompt = (
-        """You are a judge that determines if answers to questions match a gold standard answer"""
-    )
+    sys_prompt = """You are a judge that determines if answers to questions match a gold standard answer"""
 
     user_prompt = f"""
     Given the QUESTION and the gold standard ANSWER determine if the RESPONSE to the question is correct or incorrect.
     Although the RESPONSE may be more verbose, mark it as correct as long as it references the same topic 
     as the gold standard ANSWER. Also include your reasoning for the grade.
     <QUESTION>
-    {context['query']}
+    {context["query"]}
     </QUESTION>
     <ANSWER>
-    {context['answer']}
+    {context["answer"]}
     </ANSWER>
     <RESPONSE>
-    {context['response']}
+    {context["response"]}
     </RESPONSE>
     """
     return [
-        Message(role='system', content=sys_prompt),
-        Message(role='user', content=user_prompt),
+        Message(role="system", content=sys_prompt),
+        Message(role="user", content=user_prompt),
     ]
 
 
@@ -136,29 +136,29 @@ def eval_add_episode_results(context: dict[str, Any]) -> list[Message]:
     BASELINE extraction are nearly identical in quality, return True. Add your reasoning for your decision to the reasoning field
     
     <PREVIOUS MESSAGES>
-    {context['previous_messages']}
+    {context["previous_messages"]}
     </PREVIOUS MESSAGES>
     <MESSAGE>
-    {context['message']}
+    {context["message"]}
     </MESSAGE>
     
     <BASELINE>
-    {context['baseline']}
+    {context["baseline"]}
     </BASELINE>
     
     <CANDIDATE>
-    {context['candidate']}
+    {context["candidate"]}
     </CANDIDATE>
     """
     return [
-        Message(role='system', content=sys_prompt),
-        Message(role='user', content=user_prompt),
+        Message(role="system", content=sys_prompt),
+        Message(role="user", content=user_prompt),
     ]
 
 
 versions: Versions = {
-    'qa_prompt': qa_prompt,
-    'eval_prompt': eval_prompt,
-    'query_expansion': query_expansion,
-    'eval_add_episode_results': eval_add_episode_results,
+    "qa_prompt": qa_prompt,
+    "eval_prompt": eval_prompt,
+    "query_expansion": query_expansion,
+    "eval_add_episode_results": eval_add_episode_results,
 }

@@ -28,8 +28,8 @@ else:
     except ImportError:
         # If falkordb is not installed, raise an ImportError
         raise ImportError(
-            'falkordb is required for FalkorDriver. '
-            'Install it with: pip install graphiti-core[falkordb]'
+            "falkordb is required for FalkorDriver. "
+            "Install it with: pip install graphiti-core[falkordb]"
         ) from None
 
 from graphiti_core.driver.driver import GraphDriver, GraphDriverSession, GraphProvider
@@ -38,39 +38,39 @@ from graphiti_core.utils.datetime_utils import convert_datetimes_to_strings
 logger = logging.getLogger(__name__)
 
 STOPWORDS = [
-    'a',
-    'is',
-    'the',
-    'an',
-    'and',
-    'are',
-    'as',
-    'at',
-    'be',
-    'but',
-    'by',
-    'for',
-    'if',
-    'in',
-    'into',
-    'it',
-    'no',
-    'not',
-    'of',
-    'on',
-    'or',
-    'such',
-    'that',
-    'their',
-    'then',
-    'there',
-    'these',
-    'they',
-    'this',
-    'to',
-    'was',
-    'will',
-    'with',
+    "a",
+    "is",
+    "the",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "but",
+    "by",
+    "for",
+    "if",
+    "in",
+    "into",
+    "it",
+    "no",
+    "not",
+    "of",
+    "on",
+    "or",
+    "such",
+    "that",
+    "their",
+    "then",
+    "there",
+    "these",
+    "they",
+    "this",
+    "to",
+    "was",
+    "will",
+    "with",
 ]
 
 
@@ -115,12 +115,12 @@ class FalkorDriver(GraphDriver):
 
     def __init__(
         self,
-        host: str = 'localhost',
+        host: str = "localhost",
         port: int = 6379,
         username: str | None = None,
         password: str | None = None,
         falkor_db: FalkorDB | None = None,
-        database: str = 'default_db',
+        database: str = "default_db",
     ):
         """
         Initialize the FalkorDB driver.
@@ -136,9 +136,11 @@ class FalkorDriver(GraphDriver):
             # If a FalkorDB instance is provided, use it directly
             self.client = falkor_db
         else:
-            self.client = FalkorDB(host=host, port=port, username=username, password=password)
+            self.client = FalkorDB(
+                host=host, port=port, username=username, password=password
+            )
 
-        self.fulltext_syntax = '@'  # FalkorDB uses a redisearch-like syntax for fulltext queries see https://redis.io/docs/latest/develop/ai/search-and-query/query/full-text/
+        self.fulltext_syntax = "@"  # FalkorDB uses a redisearch-like syntax for fulltext queries see https://redis.io/docs/latest/develop/ai/search-and-query/query/full-text/
 
     def _get_graph(self, graph_name: str | None) -> FalkorGraph:
         # FalkorDB requires a non-None database name for multi-tenant graphs; the default is "default_db"
@@ -155,11 +157,13 @@ class FalkorDriver(GraphDriver):
         try:
             result = await graph.query(cypher_query_, params)  # type: ignore[reportUnknownArgumentType]
         except Exception as e:
-            if 'already indexed' in str(e):
+            if "already indexed" in str(e):
                 # check if index already exists
-                logger.info(f'Index already exists: {e}')
+                logger.info(f"Index already exists: {e}")
                 return None
-            logger.error(f'Error executing FalkorDB query: {e}\n{cypher_query_}\n{params}')
+            logger.error(
+                f"Error executing FalkorDB query: {e}\n{cypher_query_}\n{params}"
+            )
             raise
 
         # Convert the result header to a list of strings
@@ -184,15 +188,15 @@ class FalkorDriver(GraphDriver):
 
     async def close(self) -> None:
         """Close the driver connection."""
-        if hasattr(self.client, 'aclose'):
+        if hasattr(self.client, "aclose"):
             await self.client.aclose()  # type: ignore[reportUnknownMemberType]
-        elif hasattr(self.client.connection, 'aclose'):
+        elif hasattr(self.client.connection, "aclose"):
             await self.client.connection.aclose()
-        elif hasattr(self.client.connection, 'close'):
+        elif hasattr(self.client.connection, "close"):
             await self.client.connection.close()
 
     async def delete_all_indexes(self) -> None:
-        result = await self.execute_query('CALL db.indexes()')
+        result = await self.execute_query("CALL db.indexes()")
         if not result:
             return
 
@@ -200,30 +204,32 @@ class FalkorDriver(GraphDriver):
         drop_tasks = []
 
         for record in records:
-            label = record['label']
-            entity_type = record['entitytype']
+            label = record["label"]
+            entity_type = record["entitytype"]
 
-            for field_name, index_type in record['types'].items():
-                if 'RANGE' in index_type:
-                    drop_tasks.append(self.execute_query(f'DROP INDEX ON :{label}({field_name})'))
-                elif 'FULLTEXT' in index_type:
-                    if entity_type == 'NODE':
+            for field_name, index_type in record["types"].items():
+                if "RANGE" in index_type:
+                    drop_tasks.append(
+                        self.execute_query(f"DROP INDEX ON :{label}({field_name})")
+                    )
+                elif "FULLTEXT" in index_type:
+                    if entity_type == "NODE":
                         drop_tasks.append(
                             self.execute_query(
-                                f'DROP FULLTEXT INDEX FOR (n:{label}) ON (n.{field_name})'
+                                f"DROP FULLTEXT INDEX FOR (n:{label}) ON (n.{field_name})"
                             )
                         )
-                    elif entity_type == 'RELATIONSHIP':
+                    elif entity_type == "RELATIONSHIP":
                         drop_tasks.append(
                             self.execute_query(
-                                f'DROP FULLTEXT INDEX FOR ()-[e:{label}]-() ON (e.{field_name})'
+                                f"DROP FULLTEXT INDEX FOR ()-[e:{label}]-() ON (e.{field_name})"
                             )
                         )
 
         if drop_tasks:
             await asyncio.gather(*drop_tasks)
 
-    def clone(self, database: str) -> 'GraphDriver':
+    def clone(self, database: str) -> "GraphDriver":
         """
         Returns a shallow copy of this driver with a different default database.
         Reuses the same connection (e.g. FalkorDB, Neo4j).
@@ -240,42 +246,45 @@ class FalkorDriver(GraphDriver):
         # FalkorDB separator characters that break text into tokens
         separator_map = str.maketrans(
             {
-                ',': ' ',
-                '.': ' ',
-                '<': ' ',
-                '>': ' ',
-                '{': ' ',
-                '}': ' ',
-                '[': ' ',
-                ']': ' ',
-                '"': ' ',
-                "'": ' ',
-                ':': ' ',
-                ';': ' ',
-                '!': ' ',
-                '@': ' ',
-                '#': ' ',
-                '$': ' ',
-                '%': ' ',
-                '^': ' ',
-                '&': ' ',
-                '*': ' ',
-                '(': ' ',
-                ')': ' ',
-                '-': ' ',
-                '+': ' ',
-                '=': ' ',
-                '~': ' ',
-                '?': ' ',
+                ",": " ",
+                ".": " ",
+                "<": " ",
+                ">": " ",
+                "{": " ",
+                "}": " ",
+                "[": " ",
+                "]": " ",
+                '"': " ",
+                "'": " ",
+                ":": " ",
+                ";": " ",
+                "!": " ",
+                "@": " ",
+                "#": " ",
+                "$": " ",
+                "%": " ",
+                "^": " ",
+                "&": " ",
+                "*": " ",
+                "(": " ",
+                ")": " ",
+                "-": " ",
+                "+": " ",
+                "=": " ",
+                "~": " ",
+                "?": " ",
             }
         )
         sanitized = query.translate(separator_map)
         # Clean up multiple spaces
-        sanitized = ' '.join(sanitized.split())
+        sanitized = " ".join(sanitized.split())
         return sanitized
 
     def build_fulltext_query(
-        self, query: str, group_ids: list[str] | None = None, max_query_length: int = 128
+        self,
+        query: str,
+        group_ids: list[str] | None = None,
+        max_query_length: int = 128,
     ) -> str:
         """
         Build a fulltext query string for FalkorDB using RedisSearch syntax.
@@ -287,22 +296,22 @@ class FalkorDriver(GraphDriver):
         - OR uses pipe within parentheses: (@group_id:value1|value2)
         """
         if group_ids is None or len(group_ids) == 0:
-            group_filter = ''
+            group_filter = ""
         else:
-            group_values = '|'.join(group_ids)
-            group_filter = f'(@group_id:{group_values})'
+            group_values = "|".join(group_ids)
+            group_filter = f"(@group_id:{group_values})"
 
         sanitized_query = self.sanitize(query)
 
         # Remove stopwords from the sanitized query
         query_words = sanitized_query.split()
         filtered_words = [word for word in query_words if word.lower() not in STOPWORDS]
-        sanitized_query = ' | '.join(filtered_words)
+        sanitized_query = " | ".join(filtered_words)
 
         # If the query is too long return no query
-        if len(sanitized_query.split(' ')) + len(group_ids or '') >= max_query_length:
-            return ''
+        if len(sanitized_query.split(" ")) + len(group_ids or "") >= max_query_length:
+            return ""
 
-        full_query = group_filter + ' (' + sanitized_query + ')'
+        full_query = group_filter + " (" + sanitized_query + ")"
 
         return full_query

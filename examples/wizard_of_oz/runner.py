@@ -30,9 +30,9 @@ from graphiti_core.utils.maintenance.graph_data_operations import clear_data
 
 load_dotenv()
 
-neo4j_uri = os.environ.get('NEO4J_URI') or 'bolt://localhost:7687'
-neo4j_user = os.environ.get('NEO4J_USER') or 'neo4j'
-neo4j_password = os.environ.get('NEO4J_PASSWORD') or 'password'
+neo4j_uri = os.environ.get("NEO4J_URI") or "bolt://localhost:7687"
+neo4j_user = os.environ.get("NEO4J_USER") or "neo4j"
+neo4j_password = os.environ.get("NEO4J_PASSWORD") or "password"
 
 
 def setup_logging():
@@ -45,7 +45,9 @@ def setup_logging():
     console_handler.setLevel(logging.INFO)
 
     # Create formatter
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     # Add formatter to console handler
     console_handler.setFormatter(formatter)
@@ -58,7 +60,7 @@ def setup_logging():
 
 async def main():
     setup_logging()
-    llm_client = AnthropicClient(LLMConfig(api_key=os.environ.get('ANTHROPIC_API_KEY')))
+    llm_client = AnthropicClient(LLMConfig(api_key=os.environ.get("ANTHROPIC_API_KEY")))
     client = Graphiti(neo4j_uri, neo4j_user, neo4j_password, llm_client)
     messages = get_wizard_of_oz_messages()
     print(messages)
@@ -83,9 +85,9 @@ async def main():
     await client.build_indices_and_constraints()
     for i, chapter in enumerate(messages):
         await client.add_episode(
-            name=f'Chapter {i + 1}',
-            episode_body=chapter['content'],
-            source_description='Wizard of Oz Transcript',
+            name=f"Chapter {i + 1}",
+            episode_body=chapter["content"],
+            source_description="Wizard of Oz Transcript",
             reference_time=now + timedelta(seconds=i * 10),
         )
 

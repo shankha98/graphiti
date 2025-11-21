@@ -42,7 +42,7 @@ class ResponseModel(BaseModel):
 @pytest.fixture
 def mock_gemini_client():
     """Fixture to mock the Google Gemini client."""
-    with patch('google.genai.Client') as mock_client:
+    with patch("google.genai.Client") as mock_client:
         # Setup mock instance and its methods
         mock_instance = mock_client.return_value
         mock_instance.aio = MagicMock()
@@ -54,7 +54,9 @@ def mock_gemini_client():
 @pytest.fixture
 def gemini_client(mock_gemini_client):
     """Fixture to create a GeminiClient with a mocked client."""
-    config = LLMConfig(api_key='test_api_key', model='test-model', temperature=0.5, max_tokens=1000)
+    config = LLMConfig(
+        api_key="test_api_key", model="test-model", temperature=0.5, max_tokens=1000
+    )
     client = GeminiClient(config=config, cache=False)
     # Replace the client's client with our mock to ensure we're using the mock
     client.client = mock_gemini_client
@@ -64,28 +66,28 @@ def gemini_client(mock_gemini_client):
 class TestGeminiClientInitialization:
     """Tests for GeminiClient initialization."""
 
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     def test_init_with_config(self, mock_client):
         """Test initialization with a config object."""
         config = LLMConfig(
-            api_key='test_api_key', model='test-model', temperature=0.5, max_tokens=1000
+            api_key="test_api_key", model="test-model", temperature=0.5, max_tokens=1000
         )
         client = GeminiClient(config=config, cache=False, max_tokens=1000)
 
         assert client.config == config
-        assert client.model == 'test-model'
+        assert client.model == "test-model"
         assert client.temperature == 0.5
         assert client.max_tokens == 1000
 
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     def test_init_with_default_model(self, mock_client):
         """Test initialization with default model when none is provided."""
-        config = LLMConfig(api_key='test_api_key', model=DEFAULT_MODEL)
+        config = LLMConfig(api_key="test_api_key", model=DEFAULT_MODEL)
         client = GeminiClient(config=config, cache=False)
 
         assert client.model == DEFAULT_MODEL
 
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     def test_init_without_config(self, mock_client):
         """Test initialization without a config uses defaults."""
         client = GeminiClient(cache=False)
@@ -94,10 +96,10 @@ class TestGeminiClientInitialization:
         # When no config.model is set, it will be None, not DEFAULT_MODEL
         assert client.model is None
 
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     def test_init_with_thinking_config(self, mock_client):
         """Test initialization with thinking config."""
-        with patch('google.genai.types.ThinkingConfig') as mock_thinking_config:
+        with patch("google.genai.types.ThinkingConfig") as mock_thinking_config:
             thinking_config = mock_thinking_config.return_value
             client = GeminiClient(thinking_config=thinking_config)
             assert client.thinking_config == thinking_config
@@ -107,22 +109,24 @@ class TestGeminiClientGenerateResponse:
     """Tests for GeminiClient generate_response method."""
 
     @pytest.mark.asyncio
-    async def test_generate_response_simple_text(self, gemini_client, mock_gemini_client):
+    async def test_generate_response_simple_text(
+        self, gemini_client, mock_gemini_client
+    ):
         """Test successful response generation with simple text."""
         # Setup mock response
         mock_response = MagicMock()
-        mock_response.text = 'Test response text'
+        mock_response.text = "Test response text"
         mock_response.candidates = []
         mock_response.prompt_feedback = None
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Call method
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         result = await gemini_client.generate_response(messages)
 
         # Assertions
         assert isinstance(result, dict)
-        assert result['content'] == 'Test response text'
+        assert result["content"] == "Test response text"
         mock_gemini_client.aio.models.generate_content.assert_called_once()
 
     @pytest.mark.asyncio
@@ -139,8 +143,8 @@ class TestGeminiClientGenerateResponse:
 
         # Call method
         messages = [
-            Message(role='system', content='System message'),
-            Message(role='user', content='User message'),
+            Message(role="system", content="System message"),
+            Message(role="user", content="User message"),
         ]
         result = await gemini_client.generate_response(
             messages=messages, response_model=ResponseModel
@@ -148,31 +152,33 @@ class TestGeminiClientGenerateResponse:
 
         # Assertions
         assert isinstance(result, dict)
-        assert result['test_field'] == 'test_value'
-        assert result['optional_field'] == 42
+        assert result["test_field"] == "test_value"
+        assert result["optional_field"] == 42
         mock_gemini_client.aio.models.generate_content.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_generate_response_with_system_message(self, gemini_client, mock_gemini_client):
+    async def test_generate_response_with_system_message(
+        self, gemini_client, mock_gemini_client
+    ):
         """Test response generation with system message handling."""
         # Setup mock response
         mock_response = MagicMock()
-        mock_response.text = 'Response with system context'
+        mock_response.text = "Response with system context"
         mock_response.candidates = []
         mock_response.prompt_feedback = None
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Call method
         messages = [
-            Message(role='system', content='System message'),
-            Message(role='user', content='User message'),
+            Message(role="system", content="System message"),
+            Message(role="user", content="User message"),
         ]
         await gemini_client.generate_response(messages)
 
         # Verify system message is processed correctly
         call_args = mock_gemini_client.aio.models.generate_content.call_args
-        config = call_args[1]['config']
-        assert 'System message' in config.system_instruction
+        config = call_args[1]["config"]
+        assert "System message" in config.system_instruction
 
     @pytest.mark.asyncio
     async def test_get_model_for_size(self, gemini_client):
@@ -190,11 +196,11 @@ class TestGeminiClientGenerateResponse:
         """Test handling of rate limit errors."""
         # Setup mock to raise rate limit error
         mock_gemini_client.aio.models.generate_content.side_effect = Exception(
-            'Rate limit exceeded'
+            "Rate limit exceeded"
         )
 
         # Call method and check exception
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         with pytest.raises(RateLimitError):
             await gemini_client.generate_response(messages)
 
@@ -203,24 +209,26 @@ class TestGeminiClientGenerateResponse:
         """Test handling of quota errors."""
         # Setup mock to raise quota error
         mock_gemini_client.aio.models.generate_content.side_effect = Exception(
-            'Quota exceeded for requests'
+            "Quota exceeded for requests"
         )
 
         # Call method and check exception
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         with pytest.raises(RateLimitError):
             await gemini_client.generate_response(messages)
 
     @pytest.mark.asyncio
-    async def test_resource_exhausted_error_handling(self, gemini_client, mock_gemini_client):
+    async def test_resource_exhausted_error_handling(
+        self, gemini_client, mock_gemini_client
+    ):
         """Test handling of resource exhausted errors."""
         # Setup mock to raise resource exhausted error
         mock_gemini_client.aio.models.generate_content.side_effect = Exception(
-            'resource_exhausted: Request limit exceeded'
+            "resource_exhausted: Request limit exceeded"
         )
 
         # Call method and check exception
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         with pytest.raises(RateLimitError):
             await gemini_client.generate_response(messages)
 
@@ -229,20 +237,22 @@ class TestGeminiClientGenerateResponse:
         """Test handling of safety blocks."""
         # Setup mock response with safety block
         mock_candidate = MagicMock()
-        mock_candidate.finish_reason = 'SAFETY'
+        mock_candidate.finish_reason = "SAFETY"
         mock_candidate.safety_ratings = [
-            MagicMock(blocked=True, category='HARM_CATEGORY_HARASSMENT', probability='HIGH')
+            MagicMock(
+                blocked=True, category="HARM_CATEGORY_HARASSMENT", probability="HIGH"
+            )
         ]
 
         mock_response = MagicMock()
         mock_response.candidates = [mock_candidate]
         mock_response.prompt_feedback = None
-        mock_response.text = ''
+        mock_response.text = ""
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Call method and check exception
-        messages = [Message(role='user', content='Test message')]
-        with pytest.raises(Exception, match='Content blocked by safety filters'):
+        messages = [Message(role="user", content="Test message")]
+        with pytest.raises(Exception, match="Content blocked by safety filters"):
             await gemini_client.generate_response(messages)
 
     @pytest.mark.asyncio
@@ -250,67 +260,80 @@ class TestGeminiClientGenerateResponse:
         """Test handling of prompt blocks."""
         # Setup mock response with prompt block
         mock_prompt_feedback = MagicMock()
-        mock_prompt_feedback.block_reason = 'BLOCKED_REASON_OTHER'
+        mock_prompt_feedback.block_reason = "BLOCKED_REASON_OTHER"
 
         mock_response = MagicMock()
         mock_response.candidates = []
         mock_response.prompt_feedback = mock_prompt_feedback
-        mock_response.text = ''
+        mock_response.text = ""
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Call method and check exception
-        messages = [Message(role='user', content='Test message')]
-        with pytest.raises(Exception, match='Content blocked by safety filters'):
+        messages = [Message(role="user", content="Test message")]
+        with pytest.raises(Exception, match="Content blocked by safety filters"):
             await gemini_client.generate_response(messages)
 
     @pytest.mark.asyncio
-    async def test_structured_output_parsing_error(self, gemini_client, mock_gemini_client):
+    async def test_structured_output_parsing_error(
+        self, gemini_client, mock_gemini_client
+    ):
         """Test handling of structured output parsing errors."""
         # Setup mock response with invalid JSON that will exhaust retries
         mock_response = MagicMock()
-        mock_response.text = 'Invalid JSON that cannot be parsed'
+        mock_response.text = "Invalid JSON that cannot be parsed"
         mock_response.candidates = []
         mock_response.prompt_feedback = None
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Call method and check exception - should exhaust retries
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         with pytest.raises(Exception):  # noqa: B017
-            await gemini_client.generate_response(messages, response_model=ResponseModel)
+            await gemini_client.generate_response(
+                messages, response_model=ResponseModel
+            )
 
         # Should have called generate_content MAX_RETRIES times (2 attempts total)
-        assert mock_gemini_client.aio.models.generate_content.call_count == GeminiClient.MAX_RETRIES
+        assert (
+            mock_gemini_client.aio.models.generate_content.call_count
+            == GeminiClient.MAX_RETRIES
+        )
 
     @pytest.mark.asyncio
-    async def test_retry_logic_with_safety_block(self, gemini_client, mock_gemini_client):
+    async def test_retry_logic_with_safety_block(
+        self, gemini_client, mock_gemini_client
+    ):
         """Test that safety blocks are not retried."""
         # Setup mock response with safety block
         mock_candidate = MagicMock()
-        mock_candidate.finish_reason = 'SAFETY'
+        mock_candidate.finish_reason = "SAFETY"
         mock_candidate.safety_ratings = [
-            MagicMock(blocked=True, category='HARM_CATEGORY_HARASSMENT', probability='HIGH')
+            MagicMock(
+                blocked=True, category="HARM_CATEGORY_HARASSMENT", probability="HIGH"
+            )
         ]
 
         mock_response = MagicMock()
         mock_response.candidates = [mock_candidate]
         mock_response.prompt_feedback = None
-        mock_response.text = ''
+        mock_response.text = ""
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Call method and check that it doesn't retry
-        messages = [Message(role='user', content='Test message')]
-        with pytest.raises(Exception, match='Content blocked by safety filters'):
+        messages = [Message(role="user", content="Test message")]
+        with pytest.raises(Exception, match="Content blocked by safety filters"):
             await gemini_client.generate_response(messages)
 
         # Should only be called once (no retries for safety blocks)
         assert mock_gemini_client.aio.models.generate_content.call_count == 1
 
     @pytest.mark.asyncio
-    async def test_retry_logic_with_validation_error(self, gemini_client, mock_gemini_client):
+    async def test_retry_logic_with_validation_error(
+        self, gemini_client, mock_gemini_client
+    ):
         """Test retry behavior on validation error."""
         # First call returns invalid JSON, second call returns valid data
         mock_response1 = MagicMock()
-        mock_response1.text = 'Invalid JSON that cannot be parsed'
+        mock_response1.text = "Invalid JSON that cannot be parsed"
         mock_response1.candidates = []
         mock_response1.prompt_feedback = None
 
@@ -325,66 +348,78 @@ class TestGeminiClientGenerateResponse:
         ]
 
         # Call method
-        messages = [Message(role='user', content='Test message')]
-        result = await gemini_client.generate_response(messages, response_model=ResponseModel)
+        messages = [Message(role="user", content="Test message")]
+        result = await gemini_client.generate_response(
+            messages, response_model=ResponseModel
+        )
 
         # Should have called generate_content twice due to retry
         assert mock_gemini_client.aio.models.generate_content.call_count == 2
-        assert result['test_field'] == 'correct_value'
+        assert result["test_field"] == "correct_value"
 
     @pytest.mark.asyncio
     async def test_max_retries_exceeded(self, gemini_client, mock_gemini_client):
         """Test behavior when max retries are exceeded."""
         # Setup mock to always return invalid JSON
         mock_response = MagicMock()
-        mock_response.text = 'Invalid JSON that cannot be parsed'
+        mock_response.text = "Invalid JSON that cannot be parsed"
         mock_response.candidates = []
         mock_response.prompt_feedback = None
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Call method and check exception
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         with pytest.raises(Exception):  # noqa: B017
-            await gemini_client.generate_response(messages, response_model=ResponseModel)
+            await gemini_client.generate_response(
+                messages, response_model=ResponseModel
+            )
 
         # Should have called generate_content MAX_RETRIES times (2 attempts total)
-        assert mock_gemini_client.aio.models.generate_content.call_count == GeminiClient.MAX_RETRIES
+        assert (
+            mock_gemini_client.aio.models.generate_content.call_count
+            == GeminiClient.MAX_RETRIES
+        )
 
     @pytest.mark.asyncio
     async def test_empty_response_handling(self, gemini_client, mock_gemini_client):
         """Test handling of empty responses."""
         # Setup mock response with no text
         mock_response = MagicMock()
-        mock_response.text = ''
+        mock_response.text = ""
         mock_response.candidates = []
         mock_response.prompt_feedback = None
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Call method with structured output and check exception
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         with pytest.raises(Exception):  # noqa: B017
-            await gemini_client.generate_response(messages, response_model=ResponseModel)
+            await gemini_client.generate_response(
+                messages, response_model=ResponseModel
+            )
 
         # Should have exhausted retries due to empty response (2 attempts total)
-        assert mock_gemini_client.aio.models.generate_content.call_count == GeminiClient.MAX_RETRIES
+        assert (
+            mock_gemini_client.aio.models.generate_content.call_count
+            == GeminiClient.MAX_RETRIES
+        )
 
     @pytest.mark.asyncio
     async def test_custom_max_tokens(self, gemini_client, mock_gemini_client):
         """Test that explicit max_tokens parameter takes precedence over all other values."""
         # Setup mock response
         mock_response = MagicMock()
-        mock_response.text = 'Test response'
+        mock_response.text = "Test response"
         mock_response.candidates = []
         mock_response.prompt_feedback = None
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Call method with custom max tokens (should take precedence)
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         await gemini_client.generate_response(messages, max_tokens=500)
 
         # Verify explicit max_tokens parameter takes precedence
         call_args = mock_gemini_client.aio.models.generate_content.call_args
-        config = call_args[1]['config']
+        config = call_args[1]["config"]
         # Explicit parameter should override everything else
         assert config.max_output_tokens == 500
 
@@ -393,36 +428,38 @@ class TestGeminiClientGenerateResponse:
         """Test max_tokens precedence when no explicit parameter is provided."""
         # Setup mock response
         mock_response = MagicMock()
-        mock_response.text = 'Test response'
+        mock_response.text = "Test response"
         mock_response.candidates = []
         mock_response.prompt_feedback = None
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Test case 1: No explicit max_tokens, has instance max_tokens
         config = LLMConfig(
-            api_key='test_api_key', model='test-model', temperature=0.5, max_tokens=1000
+            api_key="test_api_key", model="test-model", temperature=0.5, max_tokens=1000
         )
         client = GeminiClient(
             config=config, cache=False, max_tokens=2000, client=mock_gemini_client
         )
 
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         await client.generate_response(messages)
 
         call_args = mock_gemini_client.aio.models.generate_content.call_args
-        config = call_args[1]['config']
+        config = call_args[1]["config"]
         # Instance max_tokens should be used
         assert config.max_output_tokens == 2000
 
         # Test case 2: No explicit max_tokens, no instance max_tokens, uses model mapping
-        config = LLMConfig(api_key='test_api_key', model='gemini-2.5-flash', temperature=0.5)
+        config = LLMConfig(
+            api_key="test_api_key", model="gemini-2.5-flash", temperature=0.5
+        )
         client = GeminiClient(config=config, cache=False, client=mock_gemini_client)
 
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         await client.generate_response(messages)
 
         call_args = mock_gemini_client.aio.models.generate_content.call_args
-        config = call_args[1]['config']
+        config = call_args[1]["config"]
         # Model mapping should be used
         assert config.max_output_tokens == 65536
 
@@ -431,57 +468,59 @@ class TestGeminiClientGenerateResponse:
         """Test that the correct model is selected based on model size."""
         # Setup mock response
         mock_response = MagicMock()
-        mock_response.text = 'Test response'
+        mock_response.text = "Test response"
         mock_response.candidates = []
         mock_response.prompt_feedback = None
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Call method with small model size
-        messages = [Message(role='user', content='Test message')]
+        messages = [Message(role="user", content="Test message")]
         await gemini_client.generate_response(messages, model_size=ModelSize.small)
 
         # Verify correct model is used
         call_args = mock_gemini_client.aio.models.generate_content.call_args
-        assert call_args[1]['model'] == DEFAULT_SMALL_MODEL
+        assert call_args[1]["model"] == DEFAULT_SMALL_MODEL
 
     @pytest.mark.asyncio
     async def test_gemini_model_max_tokens_mapping(self, mock_gemini_client):
         """Test that different Gemini models use their correct max tokens."""
         # Setup mock response
         mock_response = MagicMock()
-        mock_response.text = 'Test response'
+        mock_response.text = "Test response"
         mock_response.candidates = []
         mock_response.prompt_feedback = None
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
         # Test data: (model_name, expected_max_tokens)
         test_cases = [
-            ('gemini-2.5-flash', 65536),
-            ('gemini-2.5-pro', 65536),
-            ('gemini-2.5-flash-lite', 64000),
-            ('models/gemini-2.5-flash-lite-preview-06-17', 64000),
-            ('gemini-2.0-flash', 8192),
-            ('gemini-1.5-pro', 8192),
-            ('gemini-1.5-flash', 8192),
-            ('unknown-model', 8192),  # Fallback case
+            ("gemini-2.5-flash", 65536),
+            ("gemini-2.5-pro", 65536),
+            ("gemini-2.5-flash-lite", 64000),
+            ("models/gemini-2.5-flash-lite-preview-06-17", 64000),
+            ("gemini-2.0-flash", 8192),
+            ("gemini-1.5-pro", 8192),
+            ("gemini-1.5-flash", 8192),
+            ("unknown-model", 8192),  # Fallback case
         ]
 
         for model_name, expected_max_tokens in test_cases:
             # Create client with specific model, no explicit max_tokens to test mapping
-            config = LLMConfig(api_key='test_api_key', model=model_name, temperature=0.5)
+            config = LLMConfig(
+                api_key="test_api_key", model=model_name, temperature=0.5
+            )
             client = GeminiClient(config=config, cache=False, client=mock_gemini_client)
 
             # Call method without explicit max_tokens to test model mapping fallback
-            messages = [Message(role='user', content='Test message')]
+            messages = [Message(role="user", content="Test message")]
             await client.generate_response(messages)
 
             # Verify correct max tokens is used from model mapping
             call_args = mock_gemini_client.aio.models.generate_content.call_args
-            config = call_args[1]['config']
+            config = call_args[1]["config"]
             assert config.max_output_tokens == expected_max_tokens, (
-                f'Model {model_name} should use {expected_max_tokens} tokens'
+                f"Model {model_name} should use {expected_max_tokens} tokens"
             )
 
 
-if __name__ == '__main__':
-    pytest.main(['-v', 'test_gemini_client.py'])
+if __name__ == "__main__":
+    pytest.main(["-v", "test_gemini_client.py"])

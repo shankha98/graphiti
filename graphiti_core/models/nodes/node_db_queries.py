@@ -126,7 +126,9 @@ EPISODIC_NODE_RETURN_NEPTUNE = """
 """
 
 
-def get_entity_node_save_query(provider: GraphProvider, labels: str, has_aoss: bool = False) -> str:
+def get_entity_node_save_query(
+    provider: GraphProvider, labels: str, has_aoss: bool = False
+) -> str:
     match provider:
         case GraphProvider.FALKORDB:
             return f"""
@@ -151,9 +153,9 @@ def get_entity_node_save_query(provider: GraphProvider, labels: str, has_aoss: b
                 RETURN n.uuid AS uuid
             """
         case GraphProvider.NEPTUNE:
-            label_subquery = ''
-            for label in labels.split(':'):
-                label_subquery += f' SET n:{label}\n'
+            label_subquery = ""
+            for label in labels.split(":"):
+                label_subquery += f" SET n:{label}\n"
             return f"""
                 MERGE (n:Entity {{uuid: $entity_data.uuid}})
                 {label_subquery}
@@ -165,7 +167,7 @@ def get_entity_node_save_query(provider: GraphProvider, labels: str, has_aoss: b
             save_embedding_query = (
                 'WITH n CALL db.create.setNodeVectorProperty(n, "name_embedding", $entity_data.name_embedding)'
                 if not has_aoss
-                else ''
+                else ""
             )
             return (
                 f"""
@@ -187,7 +189,7 @@ def get_entity_node_save_bulk_query(
         case GraphProvider.FALKORDB:
             queries = []
             for node in nodes:
-                for label in node['labels']:
+                for label in node["labels"]:
                     queries.append(
                         (
                             f"""
@@ -199,16 +201,16 @@ def get_entity_node_save_bulk_query(
                             SET n.name_embedding = vecf32(node.name_embedding)
                             RETURN n.uuid AS uuid
                             """,
-                            {'nodes': [node]},
+                            {"nodes": [node]},
                         )
                     )
             return queries
         case GraphProvider.NEPTUNE:
             queries = []
             for node in nodes:
-                labels = ''
-                for label in node['labels']:
-                    labels += f' SET n:{label}\n'
+                labels = ""
+                for label in node["labels"]:
+                    labels += f" SET n:{label}\n"
                 queries.append(
                     f"""
                         UNWIND $nodes AS node
@@ -237,7 +239,7 @@ def get_entity_node_save_bulk_query(
             save_embedding_query = (
                 'WITH n, node CALL db.create.setNodeVectorProperty(n, "name_embedding", node.name_embedding)'
                 if not has_aoss
-                else ''
+                else ""
             )
             return (
                 """

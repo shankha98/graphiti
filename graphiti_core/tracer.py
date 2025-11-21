@@ -83,7 +83,7 @@ class NoOpTracer(Tracer):
 class OpenTelemetrySpan(TracerSpan):
     """Wrapper for OpenTelemetry span."""
 
-    def __init__(self, span: 'Span'):
+    def __init__(self, span: "Span"):
         self._span = span
 
     def add_attributes(self, attributes: dict[str, Any]) -> None:
@@ -109,9 +109,9 @@ class OpenTelemetrySpan(TracerSpan):
         """Set the status of the OpenTelemetry span."""
         try:
             if OTEL_AVAILABLE:
-                if status == 'error':
+                if status == "error":
                     self._span.set_status(StatusCode.ERROR, description)
-                elif status == 'ok':
+                elif status == "ok":
                     self._span.set_status(StatusCode.OK, description)
         except Exception:
             # Silently ignore tracing errors
@@ -126,7 +126,7 @@ class OpenTelemetrySpan(TracerSpan):
 class OpenTelemetryTracer(Tracer):
     """Wrapper for OpenTelemetry tracer with configurable span name prefix."""
 
-    def __init__(self, tracer: Any, span_prefix: str = 'graphiti'):
+    def __init__(self, tracer: Any, span_prefix: str = "graphiti"):
         """
         Initialize the OpenTelemetry tracer wrapper.
 
@@ -139,16 +139,18 @@ class OpenTelemetryTracer(Tracer):
         """
         if not OTEL_AVAILABLE:
             raise ImportError(
-                'OpenTelemetry is not installed. Install it with: pip install opentelemetry-api'
+                "OpenTelemetry is not installed. Install it with: pip install opentelemetry-api"
             )
         self._tracer = tracer
-        self._span_prefix = span_prefix.rstrip('.')
+        self._span_prefix = span_prefix.rstrip(".")
 
     @contextmanager
-    def start_span(self, name: str) -> Generator[OpenTelemetrySpan | NoOpSpan, None, None]:
+    def start_span(
+        self, name: str
+    ) -> Generator[OpenTelemetrySpan | NoOpSpan, None, None]:
         """Start a new OpenTelemetry span with the configured prefix."""
         try:
-            full_name = f'{self._span_prefix}.{name}'
+            full_name = f"{self._span_prefix}.{name}"
             with self._tracer.start_as_current_span(full_name) as span:
                 yield OpenTelemetrySpan(span)
         except Exception:
@@ -156,7 +158,9 @@ class OpenTelemetryTracer(Tracer):
             yield NoOpSpan()
 
 
-def create_tracer(otel_tracer: Any | None = None, span_prefix: str = 'graphiti') -> Tracer:
+def create_tracer(
+    otel_tracer: Any | None = None, span_prefix: str = "graphiti"
+) -> Tracer:
     """
     Create a tracer instance.
 

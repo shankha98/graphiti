@@ -41,7 +41,7 @@ def truncate_at_sentence(text: str, max_chars: int) -> str:
     truncated = text[:max_chars]
 
     # Look for sentence boundaries: period, exclamation, or question mark followed by space or end
-    sentence_pattern = r'[.!?](?:\s|$)'
+    sentence_pattern = r"[.!?](?:\s|$)"
     matches = list(re.finditer(sentence_pattern, truncated))
 
     if matches:

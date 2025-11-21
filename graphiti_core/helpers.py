@@ -32,9 +32,9 @@ from graphiti_core.errors import GroupIdValidationError
 
 load_dotenv()
 
-USE_PARALLEL_RUNTIME = bool(os.getenv('USE_PARALLEL_RUNTIME', False))
-SEMAPHORE_LIMIT = int(os.getenv('SEMAPHORE_LIMIT', 20))
-MAX_REFLEXION_ITERATIONS = int(os.getenv('MAX_REFLEXION_ITERATIONS', 0))
+USE_PARALLEL_RUNTIME = bool(os.getenv("USE_PARALLEL_RUNTIME", False))
+SEMAPHORE_LIMIT = int(os.getenv("SEMAPHORE_LIMIT", 20))
+MAX_REFLEXION_ITERATIONS = int(os.getenv("MAX_REFLEXION_ITERATIONS", 0))
 DEFAULT_PAGE_LIMIT = 20
 
 
@@ -54,9 +54,9 @@ def get_default_group_id(provider: GraphProvider) -> str:
     For most databases, the default group id is an empty string, while there are database types that require a specific default group id.
     """
     if provider == GraphProvider.FALKORDB:
-        return '\\_'
+        return "\\_"
     else:
-        return ''
+        return ""
 
 
 def lucene_sanitize(query: str) -> str:
@@ -64,31 +64,31 @@ def lucene_sanitize(query: str) -> str:
     # + - && || ! ( ) { } [ ] ^ " ~ * ? : \ /
     escape_map = str.maketrans(
         {
-            '+': r'\+',
-            '-': r'\-',
-            '&': r'\&',
-            '|': r'\|',
-            '!': r'\!',
-            '(': r'\(',
-            ')': r'\)',
-            '{': r'\{',
-            '}': r'\}',
-            '[': r'\[',
-            ']': r'\]',
-            '^': r'\^',
-            '"': r'\"',
-            '~': r'\~',
-            '*': r'\*',
-            '?': r'\?',
-            ':': r'\:',
-            '\\': r'\\',
-            '/': r'\/',
-            'O': r'\O',
-            'R': r'\R',
-            'N': r'\N',
-            'T': r'\T',
-            'A': r'\A',
-            'D': r'\D',
+            "+": r"\+",
+            "-": r"\-",
+            "&": r"\&",
+            "|": r"\|",
+            "!": r"\!",
+            "(": r"\(",
+            ")": r"\)",
+            "{": r"\{",
+            "}": r"\}",
+            "[": r"\[",
+            "]": r"\]",
+            "^": r"\^",
+            '"': r"\"",
+            "~": r"\~",
+            "*": r"\*",
+            "?": r"\?",
+            ":": r"\:",
+            "\\": r"\\",
+            "/": r"\/",
+            "O": r"\O",
+            "R": r"\R",
+            "N": r"\N",
+            "T": r"\T",
+            "A": r"\A",
+            "D": r"\D",
         }
     )
 
@@ -113,7 +113,9 @@ async def semaphore_gather(
         async with semaphore:
             return await coroutine
 
-    return await asyncio.gather(*(_wrap_coroutine(coroutine) for coroutine in coroutines))
+    return await asyncio.gather(
+        *(_wrap_coroutine(coroutine) for coroutine in coroutines)
+    )
 
 
 def validate_group_id(group_id: str | None) -> bool:
@@ -136,14 +138,15 @@ def validate_group_id(group_id: str | None) -> bool:
 
     # Check if string contains only ASCII alphanumeric characters, dashes, or underscores
     # Pattern matches: letters (a-z, A-Z), digits (0-9), hyphens (-), and underscores (_)
-    if not re.match(r'^[a-zA-Z0-9_-]+$', group_id):
+    if not re.match(r"^[a-zA-Z0-9_-]+$", group_id):
         raise GroupIdValidationError(group_id)
 
     return True
 
 
 def validate_excluded_entity_types(
-    excluded_entity_types: list[str] | None, entity_types: dict[str, type[BaseModel]] | None = None
+    excluded_entity_types: list[str] | None,
+    entity_types: dict[str, type[BaseModel]] | None = None,
 ) -> bool:
     """
     Validate that excluded entity types are valid type names.
@@ -162,7 +165,7 @@ def validate_excluded_entity_types(
         return True
 
     # Build set of available type names
-    available_types = {'Entity'}  # Default type is always available
+    available_types = {"Entity"}  # Default type is always available
     if entity_types:
         available_types.update(entity_types.keys())
 
@@ -170,7 +173,7 @@ def validate_excluded_entity_types(
     invalid_types = set(excluded_entity_types) - available_types
     if invalid_types:
         raise ValueError(
-            f'Invalid excluded entity types: {sorted(invalid_types)}. Available types: {sorted(available_types)}'
+            f"Invalid excluded entity types: {sorted(invalid_types)}. Available types: {sorted(available_types)}"
         )
 
     return True

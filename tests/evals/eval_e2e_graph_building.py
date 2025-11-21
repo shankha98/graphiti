@@ -46,18 +46,20 @@ async def build_subgraph(
             if message_count >= session_length:
                 continue
             message_count += 1
-            date = multi_session_dates[session_idx] + ' UTC'
-            date_format = '%Y/%m/%d (%a) %H:%M UTC'
-            date_string = datetime.strptime(date, date_format).replace(tzinfo=timezone.utc)
+            date = multi_session_dates[session_idx] + " UTC"
+            date_format = "%Y/%m/%d (%a) %H:%M UTC"
+            date_string = datetime.strptime(date, date_format).replace(
+                tzinfo=timezone.utc
+            )
 
-            episode_body = f'{msg["role"]}: {msg["content"]}'
+            episode_body = f"{msg['role']}: {msg['content']}"
             results = await graphiti.add_episode(
-                name='',
+                name="",
                 episode_body=episode_body,
                 reference_time=date_string,
                 source=EpisodeType.message,
-                source_description='',
-                group_id=user_id + '_' + group_id_suffix,
+                source_description="",
+                group_id=user_id + "_" + group_id_suffix,
             )
             for node in results.nodes:
                 node.name_embedding = None
@@ -65,29 +67,38 @@ async def build_subgraph(
                 edge.fact_embedding = None
 
             add_episode_results.append(results)
-            add_episode_context.append(msg['content'])
+            add_episode_context.append(msg["content"])
 
     return user_id, add_episode_results, add_episode_context
 
 
 async def build_graph(
-    group_id_suffix: str, multi_session_count: int, session_length: int, graphiti: Graphiti
+    group_id_suffix: str,
+    multi_session_count: int,
+    session_length: int,
+    graphiti: Graphiti,
 ) -> tuple[dict[str, list[AddEpisodeResults]], dict[str, list[str]]]:
     # Get longmemeval dataset
     lme_dataset_option = (
-        'data/longmemeval_data/longmemeval_oracle.json'  # Can be _oracle, _s, or _m
+        "data/longmemeval_data/longmemeval_oracle.json"  # Can be _oracle, _s, or _m
     )
     lme_dataset_df = pd.read_json(lme_dataset_option)
 
     add_episode_results: dict[str, list[AddEpisodeResults]] = {}
     add_episode_context: dict[str, list[str]] = {}
-    subgraph_results: list[tuple[str, list[AddEpisodeResults], list[str]]] = await semaphore_gather(
+    subgraph_results: list[
+        tuple[str, list[AddEpisodeResults], list[str]]
+    ] = await semaphore_gather(
         *[
             build_subgraph(
                 graphiti,
-                user_id='lme_oracle_experiment_user_' + str(multi_session_idx),
-                multi_session=lme_dataset_df['haystack_sessions'].iloc[multi_session_idx],
-                multi_session_dates=lme_dataset_df['haystack_dates'].iloc[multi_session_idx],
+                user_id="lme_oracle_experiment_user_" + str(multi_session_idx),
+                multi_session=lme_dataset_df["haystack_sessions"].iloc[
+                    multi_session_idx
+                ],
+                multi_session_dates=lme_dataset_df["haystack_dates"].iloc[
+                    multi_session_idx
+                ],
                 session_length=session_length,
                 group_id_suffix=group_id_suffix,
             )
@@ -104,29 +115,31 @@ async def build_graph(
 
 async def build_baseline_graph(multi_session_count: int, session_length: int):
     # Use gpt-4.1-mini for graph building baseline
-    llm_client = OpenAIClient(config=LLMConfig(model='gpt-4.1-mini'))
+    llm_client = OpenAIClient(config=LLMConfig(model="gpt-4.1-mini"))
     graphiti = Graphiti(NEO4J_URI, NEO4j_USER, NEO4j_PASSWORD, llm_client=llm_client)
 
     add_episode_results, _ = await build_graph(
-        'baseline', multi_session_count, session_length, graphiti
+        "baseline", multi_session_count, session_length, graphiti
     )
 
-    filename = 'baseline_graph_results.json'
+    filename = "baseline_graph_results.json"
 
     serializable_baseline_graph_results = {
-        key: [item.model_dump(mode='json') for item in value]
+        key: [item.model_dump(mode="json") for item in value]
         for key, value in add_episode_results.items()
     }
 
-    with open(filename, 'w') as file:
+    with open(filename, "w") as file:
         json.dump(serializable_baseline_graph_results, file, indent=4, default=str)
 
 
-async def eval_graph(multi_session_count: int, session_length: int, llm_client=None) -> float:
+async def eval_graph(
+    multi_session_count: int, session_length: int, llm_client=None
+) -> float:
     if llm_client is None:
-        llm_client = OpenAIClient(config=LLMConfig(model='gpt-4.1-mini'))
+        llm_client = OpenAIClient(config=LLMConfig(model="gpt-4.1-mini"))
     graphiti = Graphiti(NEO4J_URI, NEO4j_USER, NEO4j_PASSWORD, llm_client=llm_client)
-    with open('baseline_graph_results.json') as file:
+    with open("baseline_graph_results.json") as file:
         baseline_results_raw = json.load(file)
 
         baseline_results: dict[str, list[AddEpisodeResults]] = {
@@ -134,17 +147,17 @@ async def eval_graph(multi_session_count: int, session_length: int, llm_client=N
             for key, value in baseline_results_raw.items()
         }
     add_episode_results, add_episode_context = await build_graph(
-        'candidate', multi_session_count, session_length, graphiti
+        "candidate", multi_session_count, session_length, graphiti
     )
 
-    filename = 'candidate_graph_results.json'
+    filename = "candidate_graph_results.json"
 
     candidate_baseline_graph_results = {
-        key: [item.model_dump(mode='json') for item in value]
+        key: [item.model_dump(mode="json") for item in value]
         for key, value in add_episode_results.items()
     }
 
-    with open(filename, 'w') as file:
+    with open(filename, "w") as file:
         json.dump(candidate_baseline_graph_results, file, indent=4, default=str)
 
     raw_score = 0
@@ -159,10 +172,10 @@ async def eval_graph(multi_session_count: int, session_length: int, llm_client=N
             strict=False,
         ):
             context = {
-                'baseline': baseline_result,
-                'candidate': add_episode_result,
-                'message': episodes[0],
-                'previous_messages': episodes[1:],
+                "baseline": baseline_result,
+                "candidate": add_episode_result,
+                "message": episodes[0],
+                "previous_messages": episodes[1:],
             }
 
             llm_response = await llm_client.generate_response(
@@ -170,9 +183,9 @@ async def eval_graph(multi_session_count: int, session_length: int, llm_client=N
                 response_model=EvalAddEpisodeResults,
             )
 
-            candidate_is_worse = llm_response.get('candidate_is_worse', False)
+            candidate_is_worse = llm_response.get("candidate_is_worse", False)
             user_raw_score += 0 if candidate_is_worse else 1
-            print('llm_response:', llm_response)
+            print("llm_response:", llm_response)
         user_score = user_raw_score / len(add_episode_results[user_id])
         raw_score += user_score
     score = raw_score / user_count

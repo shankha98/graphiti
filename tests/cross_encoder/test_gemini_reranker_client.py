@@ -27,7 +27,7 @@ from graphiti_core.llm_client import LLMConfig, RateLimitError
 @pytest.fixture
 def mock_gemini_client():
     """Fixture to mock the Google Gemini client."""
-    with patch('google.genai.Client') as mock_client:
+    with patch("google.genai.Client") as mock_client:
         # Setup mock instance and its methods
         mock_instance = mock_client.return_value
         mock_instance.aio = MagicMock()
@@ -39,7 +39,7 @@ def mock_gemini_client():
 @pytest.fixture
 def gemini_reranker_client(mock_gemini_client):
     """Fixture to create a GeminiRerankerClient with a mocked client."""
-    config = LLMConfig(api_key='test_api_key', model='test-model')
+    config = LLMConfig(api_key="test_api_key", model="test-model")
     client = GeminiRerankerClient(config=config)
     # Replace the client's client with our mock to ensure we're using the mock
     client.client = mock_gemini_client
@@ -58,12 +58,12 @@ class TestGeminiRerankerClientInitialization:
 
     def test_init_with_config(self):
         """Test initialization with a config object."""
-        config = LLMConfig(api_key='test_api_key', model='test-model')
+        config = LLMConfig(api_key="test_api_key", model="test-model")
         client = GeminiRerankerClient(config=config)
 
         assert client.config == config
 
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     def test_init_without_config(self, mock_client):
         """Test initialization without a config uses defaults."""
         client = GeminiRerankerClient()
@@ -82,22 +82,24 @@ class TestGeminiRerankerClientRanking:
     """Tests for GeminiRerankerClient rank method."""
 
     @pytest.mark.asyncio
-    async def test_rank_basic_functionality(self, gemini_reranker_client, mock_gemini_client):
+    async def test_rank_basic_functionality(
+        self, gemini_reranker_client, mock_gemini_client
+    ):
         """Test basic ranking functionality."""
         # Setup mock responses with different scores
         mock_responses = [
-            create_mock_response('85'),  # High relevance
-            create_mock_response('45'),  # Medium relevance
-            create_mock_response('20'),  # Low relevance
+            create_mock_response("85"),  # High relevance
+            create_mock_response("45"),  # Medium relevance
+            create_mock_response("20"),  # Low relevance
         ]
         mock_gemini_client.aio.models.generate_content.side_effect = mock_responses
 
         # Test data
-        query = 'What is the capital of France?'
+        query = "What is the capital of France?"
         passages = [
-            'Paris is the capital and most populous city of France.',
-            'London is the capital city of England and the United Kingdom.',
-            'Berlin is the capital and largest city of Germany.',
+            "Paris is the capital and most populous city of France.",
+            "London is the capital city of England and the United Kingdom.",
+            "Berlin is the capital and largest city of Germany.",
         ]
 
         # Call method
@@ -107,7 +109,8 @@ class TestGeminiRerankerClientRanking:
         assert len(result) == 3
         assert all(isinstance(item, tuple) for item in result)
         assert all(
-            isinstance(passage, str) and isinstance(score, float) for passage, score in result
+            isinstance(passage, str) and isinstance(score, float)
+            for passage, score in result
         )
 
         # Check scores are normalized to [0, 1] and sorted in descending order
@@ -123,7 +126,7 @@ class TestGeminiRerankerClientRanking:
     @pytest.mark.asyncio
     async def test_rank_empty_passages(self, gemini_reranker_client):
         """Test ranking with empty passages list."""
-        query = 'Test query'
+        query = "Test query"
         passages = []
 
         result = await gemini_reranker_client.rank(query, passages)
@@ -131,18 +134,22 @@ class TestGeminiRerankerClientRanking:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_rank_single_passage(self, gemini_reranker_client, mock_gemini_client):
+    async def test_rank_single_passage(
+        self, gemini_reranker_client, mock_gemini_client
+    ):
         """Test ranking with a single passage."""
         # Setup mock response
-        mock_gemini_client.aio.models.generate_content.return_value = create_mock_response('75')
+        mock_gemini_client.aio.models.generate_content.return_value = (
+            create_mock_response("75")
+        )
 
-        query = 'Test query'
-        passages = ['Single test passage']
+        query = "Test query"
+        passages = ["Single test passage"]
 
         result = await gemini_reranker_client.rank(query, passages)
 
         assert len(result) == 1
-        assert result[0][0] == 'Single test passage'
+        assert result[0][0] == "Single test passage"
         assert result[0][1] == 1.0  # Single passage gets full score
 
     @pytest.mark.asyncio
@@ -152,14 +159,16 @@ class TestGeminiRerankerClientRanking:
         """Test score extraction from various response formats."""
         # Setup mock responses with different formats
         mock_responses = [
-            create_mock_response('Score: 90'),  # Contains text before number
-            create_mock_response('The relevance is 65 out of 100'),  # Contains text around number
-            create_mock_response('8'),  # Just the number
+            create_mock_response("Score: 90"),  # Contains text before number
+            create_mock_response(
+                "The relevance is 65 out of 100"
+            ),  # Contains text around number
+            create_mock_response("8"),  # Just the number
         ]
         mock_gemini_client.aio.models.generate_content.side_effect = mock_responses
 
-        query = 'Test query'
-        passages = ['Passage 1', 'Passage 2', 'Passage 3']
+        query = "Test query"
+        passages = ["Passage 1", "Passage 2", "Passage 3"]
 
         result = await gemini_reranker_client.rank(query, passages)
 
@@ -170,18 +179,20 @@ class TestGeminiRerankerClientRanking:
         assert 0.08 in scores  # 8/100
 
     @pytest.mark.asyncio
-    async def test_rank_invalid_score_handling(self, gemini_reranker_client, mock_gemini_client):
+    async def test_rank_invalid_score_handling(
+        self, gemini_reranker_client, mock_gemini_client
+    ):
         """Test handling of invalid or non-numeric scores."""
         # Setup mock responses with invalid scores
         mock_responses = [
-            create_mock_response('Not a number'),  # Invalid response
-            create_mock_response(''),  # Empty response
-            create_mock_response('95'),  # Valid response
+            create_mock_response("Not a number"),  # Invalid response
+            create_mock_response(""),  # Empty response
+            create_mock_response("95"),  # Valid response
         ]
         mock_gemini_client.aio.models.generate_content.side_effect = mock_responses
 
-        query = 'Test query'
-        passages = ['Passage 1', 'Passage 2', 'Passage 3']
+        query = "Test query"
+        passages = ["Passage 1", "Passage 2", "Passage 3"]
 
         result = await gemini_reranker_client.rank(query, passages)
 
@@ -191,19 +202,21 @@ class TestGeminiRerankerClientRanking:
         assert scores.count(0.0) == 2  # Two invalid scores assigned 0.0
 
     @pytest.mark.asyncio
-    async def test_rank_score_clamping(self, gemini_reranker_client, mock_gemini_client):
+    async def test_rank_score_clamping(
+        self, gemini_reranker_client, mock_gemini_client
+    ):
         """Test that scores are properly clamped to [0, 1] range."""
         # Setup mock responses with extreme scores
         # Note: regex only matches 1-3 digits, so negative numbers won't match
         mock_responses = [
-            create_mock_response('999'),  # Above 100 but within regex range
-            create_mock_response('invalid'),  # Invalid response becomes 0.0
-            create_mock_response('50'),  # Normal score
+            create_mock_response("999"),  # Above 100 but within regex range
+            create_mock_response("invalid"),  # Invalid response becomes 0.0
+            create_mock_response("50"),  # Normal score
         ]
         mock_gemini_client.aio.models.generate_content.side_effect = mock_responses
 
-        query = 'Test query'
-        passages = ['Passage 1', 'Passage 2', 'Passage 3']
+        query = "Test query"
+        passages = ["Passage 1", "Passage 2", "Passage 3"]
 
         result = await gemini_reranker_client.rank(query, passages)
 
@@ -218,15 +231,17 @@ class TestGeminiRerankerClientRanking:
         assert 0.5 in scores
 
     @pytest.mark.asyncio
-    async def test_rank_rate_limit_error(self, gemini_reranker_client, mock_gemini_client):
+    async def test_rank_rate_limit_error(
+        self, gemini_reranker_client, mock_gemini_client
+    ):
         """Test handling of rate limit errors."""
         # Setup mock to raise rate limit error
         mock_gemini_client.aio.models.generate_content.side_effect = Exception(
-            'Rate limit exceeded'
+            "Rate limit exceeded"
         )
 
-        query = 'Test query'
-        passages = ['Passage 1', 'Passage 2']
+        query = "Test query"
+        passages = ["Passage 1", "Passage 2"]
 
         with pytest.raises(RateLimitError):
             await gemini_reranker_client.rank(query, passages)
@@ -235,22 +250,28 @@ class TestGeminiRerankerClientRanking:
     async def test_rank_quota_error(self, gemini_reranker_client, mock_gemini_client):
         """Test handling of quota errors."""
         # Setup mock to raise quota error
-        mock_gemini_client.aio.models.generate_content.side_effect = Exception('Quota exceeded')
+        mock_gemini_client.aio.models.generate_content.side_effect = Exception(
+            "Quota exceeded"
+        )
 
-        query = 'Test query'
-        passages = ['Passage 1', 'Passage 2']
+        query = "Test query"
+        passages = ["Passage 1", "Passage 2"]
 
         with pytest.raises(RateLimitError):
             await gemini_reranker_client.rank(query, passages)
 
     @pytest.mark.asyncio
-    async def test_rank_resource_exhausted_error(self, gemini_reranker_client, mock_gemini_client):
+    async def test_rank_resource_exhausted_error(
+        self, gemini_reranker_client, mock_gemini_client
+    ):
         """Test handling of resource exhausted errors."""
         # Setup mock to raise resource exhausted error
-        mock_gemini_client.aio.models.generate_content.side_effect = Exception('resource_exhausted')
+        mock_gemini_client.aio.models.generate_content.side_effect = Exception(
+            "resource_exhausted"
+        )
 
-        query = 'Test query'
-        passages = ['Passage 1', 'Passage 2']
+        query = "Test query"
+        passages = ["Passage 1", "Passage 2"]
 
         with pytest.raises(RateLimitError):
             await gemini_reranker_client.rank(query, passages)
@@ -260,11 +281,11 @@ class TestGeminiRerankerClientRanking:
         """Test handling of HTTP 429 errors."""
         # Setup mock to raise 429 error
         mock_gemini_client.aio.models.generate_content.side_effect = Exception(
-            'HTTP 429 Too Many Requests'
+            "HTTP 429 Too Many Requests"
         )
 
-        query = 'Test query'
-        passages = ['Passage 1', 'Passage 2']
+        query = "Test query"
+        passages = ["Passage 1", "Passage 2"]
 
         with pytest.raises(RateLimitError):
             await gemini_reranker_client.rank(query, passages)
@@ -273,29 +294,33 @@ class TestGeminiRerankerClientRanking:
     async def test_rank_generic_error(self, gemini_reranker_client, mock_gemini_client):
         """Test handling of generic errors."""
         # Setup mock to raise generic error
-        mock_gemini_client.aio.models.generate_content.side_effect = Exception('Generic error')
+        mock_gemini_client.aio.models.generate_content.side_effect = Exception(
+            "Generic error"
+        )
 
-        query = 'Test query'
-        passages = ['Passage 1', 'Passage 2']
+        query = "Test query"
+        passages = ["Passage 1", "Passage 2"]
 
         with pytest.raises(Exception) as exc_info:
             await gemini_reranker_client.rank(query, passages)
 
-        assert 'Generic error' in str(exc_info.value)
+        assert "Generic error" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_rank_concurrent_requests(self, gemini_reranker_client, mock_gemini_client):
+    async def test_rank_concurrent_requests(
+        self, gemini_reranker_client, mock_gemini_client
+    ):
         """Test that multiple passages are scored concurrently."""
         # Setup mock responses
         mock_responses = [
-            create_mock_response('80'),
-            create_mock_response('60'),
-            create_mock_response('40'),
+            create_mock_response("80"),
+            create_mock_response("60"),
+            create_mock_response("40"),
         ]
         mock_gemini_client.aio.models.generate_content.side_effect = mock_responses
 
-        query = 'Test query'
-        passages = ['Passage 1', 'Passage 2', 'Passage 3']
+        query = "Test query"
+        passages = ["Passage 1", "Passage 2", "Passage 3"]
 
         await gemini_reranker_client.rank(query, passages)
 
@@ -306,23 +331,25 @@ class TestGeminiRerankerClientRanking:
         calls = mock_gemini_client.aio.models.generate_content.call_args_list
         for call in calls:
             args, kwargs = call
-            assert kwargs['model'] == gemini_reranker_client.config.model
-            assert kwargs['config'].temperature == 0.0
-            assert kwargs['config'].max_output_tokens == 3
+            assert kwargs["model"] == gemini_reranker_client.config.model
+            assert kwargs["config"].temperature == 0.0
+            assert kwargs["config"].max_output_tokens == 3
 
     @pytest.mark.asyncio
-    async def test_rank_response_parsing_error(self, gemini_reranker_client, mock_gemini_client):
+    async def test_rank_response_parsing_error(
+        self, gemini_reranker_client, mock_gemini_client
+    ):
         """Test handling of response parsing errors."""
         # Setup mock responses that will trigger ValueError during parsing
         mock_responses = [
-            create_mock_response('not a number at all'),  # Will fail regex match
-            create_mock_response('also invalid text'),  # Will fail regex match
+            create_mock_response("not a number at all"),  # Will fail regex match
+            create_mock_response("also invalid text"),  # Will fail regex match
         ]
         mock_gemini_client.aio.models.generate_content.side_effect = mock_responses
 
-        query = 'Test query'
+        query = "Test query"
         # Use multiple passages to avoid the single passage special case
-        passages = ['Passage 1', 'Passage 2']
+        passages = ["Passage 1", "Passage 2"]
 
         result = await gemini_reranker_client.rank(query, passages)
 
@@ -331,16 +358,18 @@ class TestGeminiRerankerClientRanking:
         assert all(score == 0.0 for _, score in result)
 
     @pytest.mark.asyncio
-    async def test_rank_empty_response_text(self, gemini_reranker_client, mock_gemini_client):
+    async def test_rank_empty_response_text(
+        self, gemini_reranker_client, mock_gemini_client
+    ):
         """Test handling of empty response text."""
         # Setup mock response with empty text
         mock_response = MagicMock()
-        mock_response.text = ''  # Empty string instead of None
+        mock_response.text = ""  # Empty string instead of None
         mock_gemini_client.aio.models.generate_content.return_value = mock_response
 
-        query = 'Test query'
+        query = "Test query"
         # Use multiple passages to avoid the single passage special case
-        passages = ['Passage 1', 'Passage 2']
+        passages = ["Passage 1", "Passage 2"]
 
         result = await gemini_reranker_client.rank(query, passages)
 
@@ -349,5 +378,5 @@ class TestGeminiRerankerClientRanking:
         assert all(score == 0.0 for _, score in result)
 
 
-if __name__ == '__main__':
-    pytest.main(['-v', 'test_gemini_reranker_client.py'])
+if __name__ == "__main__":
+    pytest.main(["-v", "test_gemini_reranker_client.py"])

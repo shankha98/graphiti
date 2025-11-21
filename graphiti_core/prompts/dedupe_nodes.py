@@ -23,23 +23,25 @@ from .prompt_helpers import to_prompt_json
 
 
 class NodeDuplicate(BaseModel):
-    id: int = Field(..., description='integer id of the entity')
+    id: int = Field(..., description="integer id of the entity")
     duplicate_idx: int = Field(
         ...,
-        description='idx of the duplicate entity. If no duplicate entities are found, default to -1.',
+        description="idx of the duplicate entity. If no duplicate entities are found, default to -1.",
     )
     name: str = Field(
         ...,
-        description='Name of the entity. Should be the most complete and descriptive name of the entity. Do not include any JSON formatting in the Entity name such as {}.',
+        description="Name of the entity. Should be the most complete and descriptive name of the entity. Do not include any JSON formatting in the Entity name such as {}.",
     )
     duplicates: list[int] = Field(
         ...,
-        description='idx of all entities that are a duplicate of the entity with the above id.',
+        description="idx of all entities that are a duplicate of the entity with the above id.",
     )
 
 
 class NodeResolutions(BaseModel):
-    entity_resolutions: list[NodeDuplicate] = Field(..., description='List of resolved nodes')
+    entity_resolutions: list[NodeDuplicate] = Field(
+        ..., description="List of resolved nodes"
+    )
 
 
 class Prompt(Protocol):
@@ -57,27 +59,27 @@ class Versions(TypedDict):
 def node(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are a helpful assistant that determines whether or not a NEW ENTITY is a duplicate of any EXISTING ENTITIES.',
+            role="system",
+            content="You are a helpful assistant that determines whether or not a NEW ENTITY is a duplicate of any EXISTING ENTITIES.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
         <PREVIOUS MESSAGES>
-        {to_prompt_json([ep for ep in context['previous_episodes']])}
+        {to_prompt_json([ep for ep in context["previous_episodes"]])}
         </PREVIOUS MESSAGES>
         <CURRENT MESSAGE>
-        {context['episode_content']}
+        {context["episode_content"]}
         </CURRENT MESSAGE>
         <NEW ENTITY>
-        {to_prompt_json(context['extracted_node'])}
+        {to_prompt_json(context["extracted_node"])}
         </NEW ENTITY>
         <ENTITY TYPE DESCRIPTION>
-        {to_prompt_json(context['entity_type_description'])}
+        {to_prompt_json(context["entity_type_description"])}
         </ENTITY TYPE DESCRIPTION>
 
         <EXISTING ENTITIES>
-        {to_prompt_json(context['existing_nodes'])}
+        {to_prompt_json(context["existing_nodes"])}
         </EXISTING ENTITIES>
         
         Given the above EXISTING ENTITIES and their attributes, MESSAGE, and PREVIOUS MESSAGES; Determine if the NEW ENTITY extracted from the conversation
@@ -117,18 +119,18 @@ def node(context: dict[str, Any]) -> list[Message]:
 def nodes(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are a helpful assistant that determines whether or not ENTITIES extracted from a conversation are duplicates'
-            ' of existing entities.',
+            role="system",
+            content="You are a helpful assistant that determines whether or not ENTITIES extracted from a conversation are duplicates"
+            " of existing entities.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
         <PREVIOUS MESSAGES>
-        {to_prompt_json([ep for ep in context['previous_episodes']])}
+        {to_prompt_json([ep for ep in context["previous_episodes"]])}
         </PREVIOUS MESSAGES>
         <CURRENT MESSAGE>
-        {context['episode_content']}
+        {context["episode_content"]}
         </CURRENT MESSAGE>
 
 
@@ -142,11 +144,11 @@ def nodes(context: dict[str, Any]) -> list[Message]:
         }}
 
         <ENTITIES>
-        {to_prompt_json(context['extracted_nodes'])}
+        {to_prompt_json(context["extracted_nodes"])}
         </ENTITIES>
 
         <EXISTING ENTITIES>
-        {to_prompt_json(context['existing_nodes'])}
+        {to_prompt_json(context["existing_nodes"])}
         </EXISTING ENTITIES>
 
         Each entry in EXISTING ENTITIES is an object with the following structure:
@@ -166,8 +168,8 @@ def nodes(context: dict[str, Any]) -> list[Message]:
         - They have similar names or purposes but refer to separate instances or concepts.
 
         Task:
-        ENTITIES contains {len(context['extracted_nodes'])} entities with IDs 0 through {len(context['extracted_nodes']) - 1}.
-        Your response MUST include EXACTLY {len(context['extracted_nodes'])} resolutions with IDs 0 through {len(context['extracted_nodes']) - 1}. Do not skip or add IDs.
+        ENTITIES contains {len(context["extracted_nodes"])} entities with IDs 0 through {len(context["extracted_nodes"]) - 1}.
+        Your response MUST include EXACTLY {len(context["extracted_nodes"])} resolutions with IDs 0 through {len(context["extracted_nodes"]) - 1}. Do not skip or add IDs.
 
         For every entity, return an object with the following keys:
         {{
@@ -188,16 +190,16 @@ def nodes(context: dict[str, Any]) -> list[Message]:
 def node_list(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are a helpful assistant that de-duplicates nodes from node lists.',
+            role="system",
+            content="You are a helpful assistant that de-duplicates nodes from node lists.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
         Given the following context, deduplicate a list of nodes:
 
         Nodes:
-        {to_prompt_json(context['nodes'])}
+        {to_prompt_json(context["nodes"])}
 
         Task:
         1. Group nodes together such that all duplicate nodes are in the same list of uuids
@@ -222,4 +224,4 @@ def node_list(context: dict[str, Any]) -> list[Message]:
     ]
 
 
-versions: Versions = {'node': node, 'node_list': node_list, 'nodes': nodes}
+versions: Versions = {"node": node, "node_list": node_list, "nodes": nodes}

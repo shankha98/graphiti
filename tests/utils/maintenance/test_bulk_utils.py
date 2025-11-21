@@ -10,14 +10,14 @@ from graphiti_core.utils import bulk_utils
 from graphiti_core.utils.datetime_utils import utc_now
 
 
-def _make_episode(uuid_suffix: str, group_id: str = 'group') -> EpisodicNode:
+def _make_episode(uuid_suffix: str, group_id: str = "group") -> EpisodicNode:
     return EpisodicNode(
-        name=f'episode-{uuid_suffix}',
+        name=f"episode-{uuid_suffix}",
         group_id=group_id,
         labels=[],
         source=EpisodeType.message,
-        content='content',
-        source_description='test',
+        content="content",
+        source_description="test",
         created_at=utc_now(),
         valid_at=utc_now(),
     )
@@ -41,11 +41,11 @@ def _make_clients() -> GraphitiClients:
 async def test_dedupe_nodes_bulk_reuses_canonical_nodes(monkeypatch):
     clients = _make_clients()
 
-    episode_one = _make_episode('1')
-    episode_two = _make_episode('2')
+    episode_one = _make_episode("1")
+    episode_two = _make_episode("2")
 
-    extracted_one = EntityNode(name='Alice Smith', group_id='group', labels=['Entity'])
-    extracted_two = EntityNode(name='Alice Smith', group_id='group', labels=['Entity'])
+    extracted_one = EntityNode(name="Alice Smith", group_id="group", labels=["Entity"])
+    extracted_two = EntityNode(name="Alice Smith", group_id="group", labels=["Entity"])
 
     canonical = extracted_one
 
@@ -67,9 +67,13 @@ async def test_dedupe_nodes_bulk_reuses_canonical_nodes(monkeypatch):
         assert nodes_arg == [extracted_two]
         assert existing_nodes_override is None
 
-        return [canonical], {extracted_two.uuid: canonical.uuid}, [(extracted_two, canonical)]
+        return (
+            [canonical],
+            {extracted_two.uuid: canonical.uuid},
+            [(extracted_two, canonical)],
+        )
 
-    monkeypatch.setattr(bulk_utils, 'resolve_extracted_nodes', fake_resolve)
+    monkeypatch.setattr(bulk_utils, "resolve_extracted_nodes", fake_resolve)
 
     nodes_by_episode, compressed_map = await bulk_utils.dedupe_nodes_bulk(
         clients,
@@ -91,7 +95,7 @@ async def test_dedupe_nodes_bulk_handles_empty_batch(monkeypatch):
     clients = _make_clients()
 
     resolve_mock = AsyncMock()
-    monkeypatch.setattr(bulk_utils, 'resolve_extracted_nodes', resolve_mock)
+    monkeypatch.setattr(bulk_utils, "resolve_extracted_nodes", resolve_mock)
 
     nodes_by_episode, compressed_map = await bulk_utils.dedupe_nodes_bulk(
         clients,
@@ -108,11 +112,13 @@ async def test_dedupe_nodes_bulk_handles_empty_batch(monkeypatch):
 async def test_dedupe_nodes_bulk_single_episode(monkeypatch):
     clients = _make_clients()
 
-    episode = _make_episode('solo')
-    extracted = EntityNode(name='Solo', group_id='group', labels=['Entity'])
+    episode = _make_episode("solo")
+    extracted = EntityNode(name="Solo", group_id="group", labels=["Entity"])
 
-    resolve_mock = AsyncMock(return_value=([extracted], {extracted.uuid: extracted.uuid}, []))
-    monkeypatch.setattr(bulk_utils, 'resolve_extracted_nodes', resolve_mock)
+    resolve_mock = AsyncMock(
+        return_value=([extracted], {extracted.uuid: extracted.uuid}, [])
+    )
+    monkeypatch.setattr(bulk_utils, "resolve_extracted_nodes", resolve_mock)
 
     nodes_by_episode, compressed_map = await bulk_utils.dedupe_nodes_bulk(
         clients,
@@ -129,11 +135,15 @@ async def test_dedupe_nodes_bulk_single_episode(monkeypatch):
 async def test_dedupe_nodes_bulk_uuid_map_respects_direction(monkeypatch):
     clients = _make_clients()
 
-    episode_one = _make_episode('one')
-    episode_two = _make_episode('two')
+    episode_one = _make_episode("one")
+    episode_two = _make_episode("two")
 
-    extracted_one = EntityNode(uuid='b-uuid', name='Edge Case', group_id='group', labels=['Entity'])
-    extracted_two = EntityNode(uuid='a-uuid', name='Edge Case', group_id='group', labels=['Entity'])
+    extracted_one = EntityNode(
+        uuid="b-uuid", name="Edge Case", group_id="group", labels=["Entity"]
+    )
+    extracted_two = EntityNode(
+        uuid="a-uuid", name="Edge Case", group_id="group", labels=["Entity"]
+    )
 
     canonical = extracted_one
     alias = extracted_two
@@ -151,7 +161,7 @@ async def test_dedupe_nodes_bulk_uuid_map_respects_direction(monkeypatch):
         assert nodes_arg == [extracted_two]
         return [canonical], {alias.uuid: canonical.uuid}, [(alias, canonical)]
 
-    monkeypatch.setattr(bulk_utils, 'resolve_extracted_nodes', fake_resolve)
+    monkeypatch.setattr(bulk_utils, "resolve_extracted_nodes", fake_resolve)
 
     nodes_by_episode, compressed_map = await bulk_utils.dedupe_nodes_bulk(
         clients,
@@ -168,13 +178,15 @@ async def test_dedupe_nodes_bulk_uuid_map_respects_direction(monkeypatch):
 async def test_dedupe_nodes_bulk_missing_canonical_falls_back(monkeypatch, caplog):
     clients = _make_clients()
 
-    episode = _make_episode('missing')
-    extracted = EntityNode(name='Fallback', group_id='group', labels=['Entity'])
+    episode = _make_episode("missing")
+    extracted = EntityNode(name="Fallback", group_id="group", labels=["Entity"])
 
-    resolve_mock = AsyncMock(return_value=([extracted], {extracted.uuid: 'missing-canonical'}, []))
-    monkeypatch.setattr(bulk_utils, 'resolve_extracted_nodes', resolve_mock)
+    resolve_mock = AsyncMock(
+        return_value=([extracted], {extracted.uuid: "missing-canonical"}, [])
+    )
+    monkeypatch.setattr(bulk_utils, "resolve_extracted_nodes", resolve_mock)
 
-    with caplog.at_level('WARNING'):
+    with caplog.at_level("WARNING"):
         nodes_by_episode, compressed_map = await bulk_utils.dedupe_nodes_bulk(
             clients,
             [[extracted]],
@@ -182,8 +194,8 @@ async def test_dedupe_nodes_bulk_missing_canonical_falls_back(monkeypatch, caplo
         )
 
     assert nodes_by_episode[episode.uuid] == [extracted]
-    assert compressed_map.get(extracted.uuid) == 'missing-canonical'
-    assert any('Canonical node missing' in rec.message for rec in caplog.records)
+    assert compressed_map.get(extracted.uuid) == "missing-canonical"
+    assert any("Canonical node missing" in rec.message for rec in caplog.records)
 
 
 def test_build_directed_uuid_map_empty():
@@ -193,42 +205,42 @@ def test_build_directed_uuid_map_empty():
 def test_build_directed_uuid_map_chain():
     mapping = bulk_utils._build_directed_uuid_map(
         [
-            ('a', 'b'),
-            ('b', 'c'),
+            ("a", "b"),
+            ("b", "c"),
         ]
     )
 
-    assert mapping['a'] == 'c'
-    assert mapping['b'] == 'c'
-    assert mapping['c'] == 'c'
+    assert mapping["a"] == "c"
+    assert mapping["b"] == "c"
+    assert mapping["c"] == "c"
 
 
 def test_build_directed_uuid_map_preserves_direction():
     mapping = bulk_utils._build_directed_uuid_map(
         [
-            ('alias', 'canonical'),
+            ("alias", "canonical"),
         ]
     )
 
-    assert mapping['alias'] == 'canonical'
-    assert mapping['canonical'] == 'canonical'
+    assert mapping["alias"] == "canonical"
+    assert mapping["canonical"] == "canonical"
 
 
 def test_resolve_edge_pointers_updates_sources():
     created_at = utc_now()
     edge = EntityEdge(
-        name='knows',
-        fact='fact',
-        group_id='group',
-        source_node_uuid='alias',
-        target_node_uuid='target',
+        name="knows",
+        fact="fact",
+        group_id="group",
+        source_node_uuid="alias",
+        target_node_uuid="target",
         created_at=created_at,
     )
 
-    bulk_utils.resolve_edge_pointers([edge], {'alias': 'canonical'})
+    bulk_utils.resolve_edge_pointers([edge], {"alias": "canonical"})
 
-    assert edge.source_node_uuid == 'canonical'
-    assert edge.target_node_uuid == 'target'
+    assert edge.source_node_uuid == "canonical"
+    assert edge.target_node_uuid == "target"
 
 
 @pytest.mark.asyncio
@@ -248,7 +260,9 @@ async def test_dedupe_edges_bulk_deduplicates_within_episode(monkeypatch):
         for edge in edges:
             edge.fact_embedding = [0.1, 0.2, 0.3]
 
-    monkeypatch.setattr(bulk_utils, 'create_entity_edge_embeddings', mock_create_embeddings)
+    monkeypatch.setattr(
+        bulk_utils, "create_entity_edge_embeddings", mock_create_embeddings
+    )
 
     # Mock resolve_extracted_edge to track comparisons and mark duplicates
     async def mock_resolve_extracted_edge(
@@ -276,35 +290,37 @@ async def test_dedupe_edges_bulk_deduplicates_within_episode(monkeypatch):
         # Otherwise return the extracted edge as-is
         return extracted_edge, [], []
 
-    monkeypatch.setattr(bulk_utils, 'resolve_extracted_edge', mock_resolve_extracted_edge)
+    monkeypatch.setattr(
+        bulk_utils, "resolve_extracted_edge", mock_resolve_extracted_edge
+    )
 
-    episode = _make_episode('1')
-    source_uuid = 'source-uuid'
-    target_uuid = 'target-uuid'
+    episode = _make_episode("1")
+    source_uuid = "source-uuid"
+    target_uuid = "target-uuid"
 
     # Create 3 identical edges within the same episode
     edge1 = EntityEdge(
-        name='recommends',
-        fact='assistant recommends yoga poses',
-        group_id='group',
+        name="recommends",
+        fact="assistant recommends yoga poses",
+        group_id="group",
         source_node_uuid=source_uuid,
         target_node_uuid=target_uuid,
         created_at=utc_now(),
         episodes=[episode.uuid],
     )
     edge2 = EntityEdge(
-        name='recommends',
-        fact='assistant recommends yoga poses',
-        group_id='group',
+        name="recommends",
+        fact="assistant recommends yoga poses",
+        group_id="group",
         source_node_uuid=source_uuid,
         target_node_uuid=target_uuid,
         created_at=utc_now(),
         episodes=[episode.uuid],
     )
     edge3 = EntityEdge(
-        name='recommends',
-        fact='assistant recommends yoga poses',
-        group_id='group',
+        name="recommends",
+        fact="assistant recommends yoga poses",
+        group_id="group",
         source_node_uuid=source_uuid,
         target_node_uuid=target_uuid,
         created_at=utc_now(),

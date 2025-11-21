@@ -31,15 +31,15 @@ from graphiti_core.nodes import EpisodeType
 
 logging.basicConfig(
     level=INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
 
 def setup_otel_stdout_tracing():
     """Configure OpenTelemetry to export traces to stdout."""
-    resource = Resource(attributes={'service.name': 'graphiti-example'})
+    resource = Resource(attributes={"service.name": "graphiti-example"})
     provider = TracerProvider(resource=resource)
     provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
     trace.set_tracer_provider(provider)
@@ -49,77 +49,79 @@ def setup_otel_stdout_tracing():
 async def main():
     otel_tracer = setup_otel_stdout_tracing()
 
-    print('OpenTelemetry stdout tracing enabled\n')
+    print("OpenTelemetry stdout tracing enabled\n")
 
     kuzu_driver = KuzuDriver()
     graphiti = Graphiti(
-        graph_driver=kuzu_driver, tracer=otel_tracer, trace_span_prefix='graphiti.example'
+        graph_driver=kuzu_driver,
+        tracer=otel_tracer,
+        trace_span_prefix="graphiti.example",
     )
 
     try:
         await graphiti.build_indices_and_constraints()
-        print('Graph indices and constraints built\n')
+        print("Graph indices and constraints built\n")
 
         episodes = [
             {
-                'content': 'Kamala Harris is the Attorney General of California. She was previously '
-                'the district attorney for San Francisco.',
-                'type': EpisodeType.text,
-                'description': 'biographical information',
+                "content": "Kamala Harris is the Attorney General of California. She was previously "
+                "the district attorney for San Francisco.",
+                "type": EpisodeType.text,
+                "description": "biographical information",
             },
             {
-                'content': 'As AG, Harris was in office from January 3, 2011 – January 3, 2017',
-                'type': EpisodeType.text,
-                'description': 'term dates',
+                "content": "As AG, Harris was in office from January 3, 2011 – January 3, 2017",
+                "type": EpisodeType.text,
+                "description": "term dates",
             },
             {
-                'content': {
-                    'name': 'Gavin Newsom',
-                    'position': 'Governor',
-                    'state': 'California',
-                    'previous_role': 'Lieutenant Governor',
+                "content": {
+                    "name": "Gavin Newsom",
+                    "position": "Governor",
+                    "state": "California",
+                    "previous_role": "Lieutenant Governor",
                 },
-                'type': EpisodeType.json,
-                'description': 'structured data',
+                "type": EpisodeType.json,
+                "description": "structured data",
             },
         ]
 
-        print('Adding episodes...\n')
+        print("Adding episodes...\n")
         for i, episode in enumerate(episodes):
             await graphiti.add_episode(
-                name=f'Episode {i}',
-                episode_body=episode['content']
-                if isinstance(episode['content'], str)
-                else json.dumps(episode['content']),
-                source=episode['type'],
-                source_description=episode['description'],
+                name=f"Episode {i}",
+                episode_body=episode["content"]
+                if isinstance(episode["content"], str)
+                else json.dumps(episode["content"]),
+                source=episode["type"],
+                source_description=episode["description"],
                 reference_time=datetime.now(timezone.utc),
             )
-            print(f'Added episode: Episode {i} ({episode["type"].value})')
+            print(f"Added episode: Episode {i} ({episode['type'].value})")
 
         print("\nSearching for: 'Who was the California Attorney General?'\n")
-        results = await graphiti.search('Who was the California Attorney General?')
+        results = await graphiti.search("Who was the California Attorney General?")
 
-        print('Search Results:')
+        print("Search Results:")
         for idx, result in enumerate(results[:3]):
-            print(f'\nResult {idx + 1}:')
-            print(f'  Fact: {result.fact}')
-            if hasattr(result, 'valid_at') and result.valid_at:
-                print(f'  Valid from: {result.valid_at}')
+            print(f"\nResult {idx + 1}:")
+            print(f"  Fact: {result.fact}")
+            if hasattr(result, "valid_at") and result.valid_at:
+                print(f"  Valid from: {result.valid_at}")
 
         print("\nSearching for: 'What positions has Gavin Newsom held?'\n")
-        results = await graphiti.search('What positions has Gavin Newsom held?')
+        results = await graphiti.search("What positions has Gavin Newsom held?")
 
-        print('Search Results:')
+        print("Search Results:")
         for idx, result in enumerate(results[:3]):
-            print(f'\nResult {idx + 1}:')
-            print(f'  Fact: {result.fact}')
+            print(f"\nResult {idx + 1}:")
+            print(f"  Fact: {result.fact}")
 
-        print('\nExample complete')
+        print("\nExample complete")
 
     finally:
         await graphiti.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

@@ -30,7 +30,9 @@ from graphiti_core.embedder.gemini import (
 )
 
 
-def create_gemini_embedding(multiplier: float = 0.1, dimension: int = 1536) -> MagicMock:
+def create_gemini_embedding(
+    multiplier: float = 0.1, dimension: int = 1536
+) -> MagicMock:
     """Create a mock Gemini embedding with specified value multiplier and dimension."""
     mock_embedding = MagicMock()
     mock_embedding.values = create_embedding_values(multiplier, dimension)
@@ -60,7 +62,7 @@ def mock_gemini_batch_response() -> MagicMock:
 @pytest.fixture
 def mock_gemini_client() -> Generator[Any, Any, None]:
     """Create a mocked Gemini client."""
-    with patch('google.genai.Client') as mock_client:
+    with patch("google.genai.Client") as mock_client:
         mock_instance = mock_client.return_value
         mock_instance.aio = MagicMock()
         mock_instance.aio.models = MagicMock()
@@ -71,7 +73,7 @@ def mock_gemini_client() -> Generator[Any, Any, None]:
 @pytest.fixture
 def gemini_embedder(mock_gemini_client: Any) -> GeminiEmbedder:
     """Create a GeminiEmbedder with a mocked client."""
-    config = GeminiEmbedderConfig(api_key='test_api_key')
+    config = GeminiEmbedderConfig(api_key="test_api_key")
     client = GeminiEmbedder(config=config)
     client.client = mock_gemini_client
     return client
@@ -80,20 +82,20 @@ def gemini_embedder(mock_gemini_client: Any) -> GeminiEmbedder:
 class TestGeminiEmbedderInitialization:
     """Tests for GeminiEmbedder initialization."""
 
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     def test_init_with_config(self, mock_client):
         """Test initialization with a config object."""
         config = GeminiEmbedderConfig(
-            api_key='test_api_key', embedding_model='custom-model', embedding_dim=768
+            api_key="test_api_key", embedding_model="custom-model", embedding_dim=768
         )
         embedder = GeminiEmbedder(config=config)
 
         assert embedder.config == config
-        assert embedder.config.embedding_model == 'custom-model'
-        assert embedder.config.api_key == 'test_api_key'
+        assert embedder.config.embedding_model == "custom-model"
+        assert embedder.config.api_key == "test_api_key"
         assert embedder.config.embedding_dim == 768
 
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     def test_init_without_config(self, mock_client):
         """Test initialization without a config uses defaults."""
         embedder = GeminiEmbedder()
@@ -101,13 +103,13 @@ class TestGeminiEmbedderInitialization:
         assert embedder.config is not None
         assert embedder.config.embedding_model == DEFAULT_EMBEDDING_MODEL
 
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     def test_init_with_partial_config(self, mock_client):
         """Test initialization with partial config."""
-        config = GeminiEmbedderConfig(api_key='test_api_key')
+        config = GeminiEmbedderConfig(api_key="test_api_key")
         embedder = GeminiEmbedder(config=config)
 
-        assert embedder.config.api_key == 'test_api_key'
+        assert embedder.config.api_key == "test_api_key"
         assert embedder.config.embedding_model == DEFAULT_EMBEDDING_MODEL
 
 
@@ -126,44 +128,49 @@ class TestGeminiEmbedderCreate:
         mock_gemini_client.aio.models.embed_content.return_value = mock_gemini_response
 
         # Call method
-        result = await gemini_embedder.create('Test input')
+        result = await gemini_embedder.create("Test input")
 
         # Verify API is called with correct parameters
         mock_gemini_client.aio.models.embed_content.assert_called_once()
         _, kwargs = mock_gemini_client.aio.models.embed_content.call_args
-        assert kwargs['model'] == DEFAULT_EMBEDDING_MODEL
-        assert kwargs['contents'] == ['Test input']
+        assert kwargs["model"] == DEFAULT_EMBEDDING_MODEL
+        assert kwargs["contents"] == ["Test input"]
 
         # Verify result is processed correctly
         assert result == mock_gemini_response.embeddings[0].values
 
     @pytest.mark.asyncio
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     async def test_create_with_custom_model(
-        self, mock_client_class, mock_gemini_client: Any, mock_gemini_response: MagicMock
+        self,
+        mock_client_class,
+        mock_gemini_client: Any,
+        mock_gemini_response: MagicMock,
     ) -> None:
         """Test create method with custom embedding model."""
         # Setup embedder with custom model
-        config = GeminiEmbedderConfig(api_key='test_api_key', embedding_model='custom-model')
+        config = GeminiEmbedderConfig(
+            api_key="test_api_key", embedding_model="custom-model"
+        )
         embedder = GeminiEmbedder(config=config)
         embedder.client = mock_gemini_client
         mock_gemini_client.aio.models.embed_content.return_value = mock_gemini_response
 
         # Call method
-        await embedder.create('Test input')
+        await embedder.create("Test input")
 
         # Verify custom model is used
         _, kwargs = mock_gemini_client.aio.models.embed_content.call_args
-        assert kwargs['model'] == 'custom-model'
+        assert kwargs["model"] == "custom-model"
 
     @pytest.mark.asyncio
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     async def test_create_with_custom_dimension(
         self, mock_client_class, mock_gemini_client: Any
     ) -> None:
         """Test create method with custom embedding dimension."""
         # Setup embedder with custom dimension
-        config = GeminiEmbedderConfig(api_key='test_api_key', embedding_dim=768)
+        config = GeminiEmbedderConfig(api_key="test_api_key", embedding_dim=768)
         embedder = GeminiEmbedder(config=config)
         embedder.client = mock_gemini_client
 
@@ -173,11 +180,11 @@ class TestGeminiEmbedderCreate:
         mock_gemini_client.aio.models.embed_content.return_value = mock_response
 
         # Call method
-        result = await embedder.create('Test input')
+        result = await embedder.create("Test input")
 
         # Verify custom dimension is used in config
         _, kwargs = mock_gemini_client.aio.models.embed_content.call_args
-        assert kwargs['config'].output_dimensionality == 768
+        assert kwargs["config"].output_dimensionality == 768
 
         # Verify result has correct dimension
         assert len(result) == 768
@@ -193,10 +200,10 @@ class TestGeminiEmbedderCreate:
         mock_gemini_client.aio.models.embed_content.return_value = mock_gemini_response
 
         # Test with string
-        await gemini_embedder.create('Test string')
+        await gemini_embedder.create("Test string")
 
         # Test with list of strings
-        await gemini_embedder.create(['Test', 'List'])
+        await gemini_embedder.create(["Test", "List"])
 
         # Test with iterable of integers
         await gemini_embedder.create([1, 2, 3])
@@ -216,9 +223,11 @@ class TestGeminiEmbedderCreate:
 
         # Call method and expect exception
         with pytest.raises(ValueError) as exc_info:
-            await gemini_embedder.create('Test input')
+            await gemini_embedder.create("Test input")
 
-        assert 'No embeddings returned from Gemini API in create()' in str(exc_info.value)
+        assert "No embeddings returned from Gemini API in create()" in str(
+            exc_info.value
+        )
 
     @pytest.mark.asyncio
     async def test_create_no_values_error(
@@ -234,9 +243,11 @@ class TestGeminiEmbedderCreate:
 
         # Call method and expect exception
         with pytest.raises(ValueError) as exc_info:
-            await gemini_embedder.create('Test input')
+            await gemini_embedder.create("Test input")
 
-        assert 'No embeddings returned from Gemini API in create()' in str(exc_info.value)
+        assert "No embeddings returned from Gemini API in create()" in str(
+            exc_info.value
+        )
 
 
 class TestGeminiEmbedderCreateBatch:
@@ -251,8 +262,10 @@ class TestGeminiEmbedderCreateBatch:
     ) -> None:
         """Test that create_batch method correctly processes multiple inputs."""
         # Setup
-        mock_gemini_client.aio.models.embed_content.return_value = mock_gemini_batch_response
-        input_batch = ['Input 1', 'Input 2', 'Input 3']
+        mock_gemini_client.aio.models.embed_content.return_value = (
+            mock_gemini_batch_response
+        )
+        input_batch = ["Input 1", "Input 2", "Input 3"]
 
         # Call method
         result = await gemini_embedder.create_batch(input_batch)
@@ -260,8 +273,8 @@ class TestGeminiEmbedderCreateBatch:
         # Verify API is called with correct parameters
         mock_gemini_client.aio.models.embed_content.assert_called_once()
         _, kwargs = mock_gemini_client.aio.models.embed_content.call_args
-        assert kwargs['model'] == DEFAULT_EMBEDDING_MODEL
-        assert kwargs['contents'] == input_batch
+        assert kwargs["model"] == DEFAULT_EMBEDDING_MODEL
+        assert kwargs["contents"] == input_batch
 
         # Verify all results are processed correctly
         assert len(result) == 3
@@ -280,7 +293,7 @@ class TestGeminiEmbedderCreateBatch:
     ) -> None:
         """Test create_batch method with single input."""
         mock_gemini_client.aio.models.embed_content.return_value = mock_gemini_response
-        input_batch = ['Single input']
+        input_batch = ["Single input"]
 
         result = await gemini_embedder.create_batch(input_batch)
 
@@ -313,12 +326,12 @@ class TestGeminiEmbedderCreateBatch:
         mock_response.embeddings = []
         mock_gemini_client.aio.models.embed_content.return_value = mock_response
 
-        input_batch = ['Input 1', 'Input 2']
+        input_batch = ["Input 1", "Input 2"]
 
         with pytest.raises(ValueError) as exc_info:
             await gemini_embedder.create_batch(input_batch)
 
-        assert 'No embeddings returned from Gemini API' in str(exc_info.value)
+        assert "No embeddings returned from Gemini API" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_create_batch_empty_values_error(
@@ -350,22 +363,24 @@ class TestGeminiEmbedderCreateBatch:
             mock_individual_response_2,  # Third call for individual item 2
         ]
 
-        input_batch = ['Input 1', 'Input 2']
+        input_batch = ["Input 1", "Input 2"]
 
         with pytest.raises(ValueError) as exc_info:
             await gemini_embedder.create_batch(input_batch)
 
-        assert 'Empty embedding values returned' in str(exc_info.value)
+        assert "Empty embedding values returned" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    @patch('google.genai.Client')
+    @patch("google.genai.Client")
     async def test_create_batch_with_custom_model_and_dimension(
         self, mock_client_class, mock_gemini_client: Any
     ) -> None:
         """Test create_batch method with custom model and dimension."""
         # Setup embedder with custom settings
         config = GeminiEmbedderConfig(
-            api_key='test_api_key', embedding_model='custom-batch-model', embedding_dim=512
+            api_key="test_api_key",
+            embedding_model="custom-batch-model",
+            embedding_dim=512,
         )
         embedder = GeminiEmbedder(config=config)
         embedder.client = mock_gemini_client
@@ -378,18 +393,18 @@ class TestGeminiEmbedderCreateBatch:
         ]
         mock_gemini_client.aio.models.embed_content.return_value = mock_response
 
-        input_batch = ['Input 1', 'Input 2']
+        input_batch = ["Input 1", "Input 2"]
         result = await embedder.create_batch(input_batch)
 
         # Verify custom settings are used
         _, kwargs = mock_gemini_client.aio.models.embed_content.call_args
-        assert kwargs['model'] == 'custom-batch-model'
-        assert kwargs['config'].output_dimensionality == 512
+        assert kwargs["model"] == "custom-batch-model"
+        assert kwargs["config"].output_dimensionality == 512
 
         # Verify results have correct dimension
         assert len(result) == 2
         assert all(len(embedding) == 512 for embedding in result)
 
 
-if __name__ == '__main__':
-    pytest.main(['-xvs', __file__])
+if __name__ == "__main__":
+    pytest.main(["-xvs", __file__])

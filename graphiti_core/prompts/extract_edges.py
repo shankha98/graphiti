@@ -23,24 +23,26 @@ from .prompt_helpers import to_prompt_json
 
 
 class Edge(BaseModel):
-    relation_type: str = Field(..., description='FACT_PREDICATE_IN_SCREAMING_SNAKE_CASE')
+    relation_type: str = Field(
+        ..., description="FACT_PREDICATE_IN_SCREAMING_SNAKE_CASE"
+    )
     source_entity_id: int = Field(
-        ..., description='The id of the source entity from the ENTITIES list'
+        ..., description="The id of the source entity from the ENTITIES list"
     )
     target_entity_id: int = Field(
-        ..., description='The id of the target entity from the ENTITIES list'
+        ..., description="The id of the target entity from the ENTITIES list"
     )
     fact: str = Field(
         ...,
-        description='A natural language description of the relationship between the entities, paraphrased from the source text',
+        description="A natural language description of the relationship between the entities, paraphrased from the source text",
     )
     valid_at: str | None = Field(
         None,
-        description='The date and time when the relationship described by the edge fact became true or was established. Use ISO 8601 format (YYYY-MM-DDTHH:MM:SS.SSSSSSZ)',
+        description="The date and time when the relationship described by the edge fact became true or was established. Use ISO 8601 format (YYYY-MM-DDTHH:MM:SS.SSSSSSZ)",
     )
     invalid_at: str | None = Field(
         None,
-        description='The date and time when the relationship described by the edge fact stopped being true or ended. Use ISO 8601 format (YYYY-MM-DDTHH:MM:SS.SSSSSSZ)',
+        description="The date and time when the relationship described by the edge fact stopped being true or ended. Use ISO 8601 format (YYYY-MM-DDTHH:MM:SS.SSSSSSZ)",
     )
 
 
@@ -67,32 +69,32 @@ class Versions(TypedDict):
 def edge(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are an expert fact extractor that extracts fact triples from text. '
-            '1. Extracted fact triples should also be extracted with relevant date information.'
-            '2. Treat the CURRENT TIME as the time the CURRENT MESSAGE was sent. All temporal information should be extracted relative to this time.',
+            role="system",
+            content="You are an expert fact extractor that extracts fact triples from text. "
+            "1. Extracted fact triples should also be extracted with relevant date information."
+            "2. Treat the CURRENT TIME as the time the CURRENT MESSAGE was sent. All temporal information should be extracted relative to this time.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
 <FACT TYPES>
-{context['edge_types']}
+{context["edge_types"]}
 </FACT TYPES>
 
 <PREVIOUS_MESSAGES>
-{to_prompt_json([ep for ep in context['previous_episodes']])}
+{to_prompt_json([ep for ep in context["previous_episodes"]])}
 </PREVIOUS_MESSAGES>
 
 <CURRENT_MESSAGE>
-{context['episode_content']}
+{context["episode_content"]}
 </CURRENT_MESSAGE>
 
 <ENTITIES>
-{to_prompt_json(context['nodes'])}
+{to_prompt_json(context["nodes"])}
 </ENTITIES>
 
 <REFERENCE_TIME>
-{context['reference_time']}  # ISO 8601 (UTC); used to resolve relative time mentions
+{context["reference_time"]}  # ISO 8601 (UTC); used to resolve relative time mentions
 </REFERENCE_TIME>
 
 # TASK
@@ -110,7 +112,7 @@ Only extract facts that:
 You may use information from the PREVIOUS MESSAGES only to disambiguate references or support continuity.
 
 
-{context['custom_prompt']}
+{context["custom_prompt"]}
 
 # EXTRACTION RULES
 
@@ -141,44 +143,44 @@ def reflexion(context: dict[str, Any]) -> list[Message]:
 
     user_prompt = f"""
 <PREVIOUS MESSAGES>
-{to_prompt_json([ep for ep in context['previous_episodes']])}
+{to_prompt_json([ep for ep in context["previous_episodes"]])}
 </PREVIOUS MESSAGES>
 <CURRENT MESSAGE>
-{context['episode_content']}
+{context["episode_content"]}
 </CURRENT MESSAGE>
 
 <EXTRACTED ENTITIES>
-{context['nodes']}
+{context["nodes"]}
 </EXTRACTED ENTITIES>
 
 <EXTRACTED FACTS>
-{context['extracted_facts']}
+{context["extracted_facts"]}
 </EXTRACTED FACTS>
 
 Given the above MESSAGES, list of EXTRACTED ENTITIES entities, and list of EXTRACTED FACTS; 
 determine if any facts haven't been extracted.
 """
     return [
-        Message(role='system', content=sys_prompt),
-        Message(role='user', content=user_prompt),
+        Message(role="system", content=sys_prompt),
+        Message(role="user", content=user_prompt),
     ]
 
 
 def extract_attributes(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are a helpful assistant that extracts fact properties from the provided text.',
+            role="system",
+            content="You are a helpful assistant that extracts fact properties from the provided text.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
 
         <MESSAGE>
-        {to_prompt_json(context['episode_content'])}
+        {to_prompt_json(context["episode_content"])}
         </MESSAGE>
         <REFERENCE TIME>
-        {context['reference_time']}
+        {context["reference_time"]}
         </REFERENCE TIME>
 
         Given the above MESSAGE, its REFERENCE TIME, and the following FACT, update any of its attributes based on the information provided
@@ -189,7 +191,7 @@ def extract_attributes(context: dict[str, Any]) -> list[Message]:
         2. Only use the provided MESSAGES and FACT to set attribute values.
 
         <FACT>
-        {context['fact']}
+        {context["fact"]}
         </FACT>
         """,
         ),
@@ -197,7 +199,7 @@ def extract_attributes(context: dict[str, Any]) -> list[Message]:
 
 
 versions: Versions = {
-    'edge': edge,
-    'reflexion': reflexion,
-    'extract_attributes': extract_attributes,
+    "edge": edge,
+    "reflexion": reflexion,
+    "extract_attributes": extract_attributes,
 }

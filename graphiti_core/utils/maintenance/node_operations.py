@@ -69,18 +69,18 @@ async def extract_nodes_reflexion(
 ) -> list[str]:
     # Prepare context for LLM
     context = {
-        'episode_content': episode.content,
-        'previous_episodes': [ep.content for ep in previous_episodes],
-        'extracted_entities': node_names,
+        "episode_content": episode.content,
+        "previous_episodes": [ep.content for ep in previous_episodes],
+        "extracted_entities": node_names,
     }
 
     llm_response = await llm_client.generate_response(
         prompt_library.extract_nodes.reflexion(context),
         MissedEntities,
         group_id=group_id,
-        prompt_name='extract_nodes.reflexion',
+        prompt_name="extract_nodes.reflexion",
     )
-    missed_entities = llm_response.get('missed_entities', [])
+    missed_entities = llm_response.get("missed_entities", [])
 
     return missed_entities
 
@@ -95,24 +95,24 @@ async def extract_nodes(
     start = time()
     llm_client = clients.llm_client
     llm_response = {}
-    custom_prompt = ''
+    custom_prompt = ""
     entities_missed = True
     reflexion_iterations = 0
 
     entity_types_context = [
         {
-            'entity_type_id': 0,
-            'entity_type_name': 'Entity',
-            'entity_type_description': 'Default entity classification. Use this entity type if the entity is not one of the other listed types.',
+            "entity_type_id": 0,
+            "entity_type_name": "Entity",
+            "entity_type_description": "Default entity classification. Use this entity type if the entity is not one of the other listed types.",
         }
     ]
 
     entity_types_context += (
         [
             {
-                'entity_type_id': i + 1,
-                'entity_type_name': type_name,
-                'entity_type_description': type_model.__doc__,
+                "entity_type_id": i + 1,
+                "entity_type_name": type_name,
+                "entity_type_description": type_model.__doc__,
             }
             for i, (type_name, type_model) in enumerate(entity_types.items())
         ]
@@ -121,12 +121,12 @@ async def extract_nodes(
     )
 
     context = {
-        'episode_content': episode.content,
-        'episode_timestamp': episode.valid_at.isoformat(),
-        'previous_episodes': [ep.content for ep in previous_episodes],
-        'custom_prompt': custom_prompt,
-        'entity_types': entity_types_context,
-        'source_description': episode.source_description,
+        "episode_content": episode.content,
+        "episode_timestamp": episode.valid_at.isoformat(),
+        "previous_episodes": [ep.content for ep in previous_episodes],
+        "custom_prompt": custom_prompt,
+        "entity_types": entity_types_context,
+        "source_description": episode.source_description,
     }
 
     while entities_missed and reflexion_iterations <= MAX_REFLEXION_ITERATIONS:
@@ -135,21 +135,21 @@ async def extract_nodes(
                 prompt_library.extract_nodes.extract_message(context),
                 response_model=ExtractedEntities,
                 group_id=episode.group_id,
-                prompt_name='extract_nodes.extract_message',
+                prompt_name="extract_nodes.extract_message",
             )
         elif episode.source == EpisodeType.text:
             llm_response = await llm_client.generate_response(
                 prompt_library.extract_nodes.extract_text(context),
                 response_model=ExtractedEntities,
                 group_id=episode.group_id,
-                prompt_name='extract_nodes.extract_text',
+                prompt_name="extract_nodes.extract_text",
             )
         elif episode.source == EpisodeType.json:
             llm_response = await llm_client.generate_response(
                 prompt_library.extract_nodes.extract_json(context),
                 response_model=ExtractedEntities,
                 group_id=episode.group_id,
-                prompt_name='extract_nodes.extract_json',
+                prompt_name="extract_nodes.extract_json",
             )
 
         response_object = ExtractedEntities(**llm_response)
@@ -168,42 +168,48 @@ async def extract_nodes(
 
             entities_missed = len(missing_entities) != 0
 
-            custom_prompt = 'Make sure that the following entities are extracted: '
+            custom_prompt = "Make sure that the following entities are extracted: "
             for entity in missing_entities:
-                custom_prompt += f'\n{entity},'
+                custom_prompt += f"\n{entity},"
 
-    filtered_extracted_entities = [entity for entity in extracted_entities if entity.name.strip()]
+    filtered_extracted_entities = [
+        entity for entity in extracted_entities if entity.name.strip()
+    ]
     end = time()
-    logger.debug(f'Extracted new nodes: {filtered_extracted_entities} in {(end - start) * 1000} ms')
+    logger.debug(
+        f"Extracted new nodes: {filtered_extracted_entities} in {(end - start) * 1000} ms"
+    )
     # Convert the extracted data into EntityNode objects
     extracted_nodes = []
     for extracted_entity in filtered_extracted_entities:
         type_id = extracted_entity.entity_type_id
         if 0 <= type_id < len(entity_types_context):
-            entity_type_name = entity_types_context[extracted_entity.entity_type_id].get(
-                'entity_type_name'
-            )
+            entity_type_name = entity_types_context[
+                extracted_entity.entity_type_id
+            ].get("entity_type_name")
         else:
-            entity_type_name = 'Entity'
+            entity_type_name = "Entity"
 
         # Check if this entity type should be excluded
         if excluded_entity_types and entity_type_name in excluded_entity_types:
-            logger.debug(f'Excluding entity "{extracted_entity.name}" of type "{entity_type_name}"')
+            logger.debug(
+                f'Excluding entity "{extracted_entity.name}" of type "{entity_type_name}"'
+            )
             continue
 
-        labels: list[str] = list({'Entity', str(entity_type_name)})
+        labels: list[str] = list({"Entity", str(entity_type_name)})
 
         new_node = EntityNode(
             name=extracted_entity.name,
             group_id=episode.group_id,
             labels=labels,
-            summary='',
+            summary="",
             created_at=utc_now(),
         )
         extracted_nodes.append(new_node)
-        logger.debug(f'Created new node: {new_node.name} (UUID: {new_node.uuid})')
+        logger.debug(f"Created new node: {new_node.name} (UUID: {new_node.uuid})")
 
-    logger.debug(f'Extracted nodes: {[(n.name, n.uuid) for n in extracted_nodes]}')
+    logger.debug(f"Extracted nodes: {[(n.name, n.uuid) for n in extracted_nodes]}")
 
     return extracted_nodes
 
@@ -227,7 +233,9 @@ async def _collect_candidate_nodes(
         ]
     )
 
-    candidate_nodes: list[EntityNode] = [node for result in search_results for node in result.nodes]
+    candidate_nodes: list[EntityNode] = [
+        node for result in search_results for node in result.nodes
+    ]
 
     if existing_nodes_override is not None:
         candidate_nodes.extend(existing_nodes_override)
@@ -260,50 +268,55 @@ async def _resolve_with_llm(
     if not state.unresolved_indices:
         return
 
-    entity_types_dict: dict[str, type[BaseModel]] = entity_types if entity_types is not None else {}
+    entity_types_dict: dict[str, type[BaseModel]] = (
+        entity_types if entity_types is not None else {}
+    )
 
     llm_extracted_nodes = [extracted_nodes[i] for i in state.unresolved_indices]
 
     extracted_nodes_context = [
         {
-            'id': i,
-            'name': node.name,
-            'entity_type': node.labels,
-            'entity_type_description': entity_types_dict.get(
-                next((item for item in node.labels if item != 'Entity'), '')
+            "id": i,
+            "name": node.name,
+            "entity_type": node.labels,
+            "entity_type_description": entity_types_dict.get(
+                next((item for item in node.labels if item != "Entity"), "")
             ).__doc__
-            or 'Default Entity Type',
+            or "Default Entity Type",
         }
         for i, node in enumerate(llm_extracted_nodes)
     ]
 
-    sent_ids = [ctx['id'] for ctx in extracted_nodes_context]
+    sent_ids = [ctx["id"] for ctx in extracted_nodes_context]
     logger.debug(
-        'Sending %d entities to LLM for deduplication with IDs 0-%d (actual IDs sent: %s)',
+        "Sending %d entities to LLM for deduplication with IDs 0-%d (actual IDs sent: %s)",
         len(llm_extracted_nodes),
         len(llm_extracted_nodes) - 1,
-        sent_ids if len(sent_ids) < 20 else f'{sent_ids[:10]}...{sent_ids[-10:]}',
+        sent_ids if len(sent_ids) < 20 else f"{sent_ids[:10]}...{sent_ids[-10:]}",
     )
     if llm_extracted_nodes:
         sample_size = min(3, len(extracted_nodes_context))
         logger.debug(
-            'First %d entities: %s',
+            "First %d entities: %s",
             sample_size,
-            [(ctx['id'], ctx['name']) for ctx in extracted_nodes_context[:sample_size]],
+            [(ctx["id"], ctx["name"]) for ctx in extracted_nodes_context[:sample_size]],
         )
         if len(extracted_nodes_context) > 3:
             logger.debug(
-                'Last %d entities: %s',
+                "Last %d entities: %s",
                 sample_size,
-                [(ctx['id'], ctx['name']) for ctx in extracted_nodes_context[-sample_size:]],
+                [
+                    (ctx["id"], ctx["name"])
+                    for ctx in extracted_nodes_context[-sample_size:]
+                ],
             )
 
     existing_nodes_context = [
         {
             **{
-                'idx': i,
-                'name': candidate.name,
-                'entity_types': candidate.labels,
+                "idx": i,
+                "name": candidate.name,
+                "entity_types": candidate.labels,
             },
             **candidate.attributes,
         }
@@ -311,21 +324,25 @@ async def _resolve_with_llm(
     ]
 
     context = {
-        'extracted_nodes': extracted_nodes_context,
-        'existing_nodes': existing_nodes_context,
-        'episode_content': episode.content if episode is not None else '',
-        'previous_episodes': (
-            [ep.content for ep in previous_episodes] if previous_episodes is not None else []
+        "extracted_nodes": extracted_nodes_context,
+        "existing_nodes": existing_nodes_context,
+        "episode_content": episode.content if episode is not None else "",
+        "previous_episodes": (
+            [ep.content for ep in previous_episodes]
+            if previous_episodes is not None
+            else []
         ),
     }
 
     llm_response = await llm_client.generate_response(
         prompt_library.dedupe_nodes.nodes(context),
         response_model=NodeResolutions,
-        prompt_name='dedupe_nodes.nodes',
+        prompt_name="dedupe_nodes.nodes",
     )
 
-    node_resolutions: list[NodeDuplicate] = NodeResolutions(**llm_response).entity_resolutions
+    node_resolutions: list[NodeDuplicate] = NodeResolutions(
+        **llm_response
+    ).entity_resolutions
 
     valid_relative_range = range(len(state.unresolved_indices))
     processed_relative_ids: set[int] = set()
@@ -336,17 +353,19 @@ async def _resolve_with_llm(
     extra_ids = received_ids - expected_ids
 
     logger.debug(
-        'Received %d resolutions for %d entities',
+        "Received %d resolutions for %d entities",
         len(node_resolutions),
         len(state.unresolved_indices),
     )
 
     if missing_ids:
-        logger.warning('LLM did not return resolutions for IDs: %s', sorted(missing_ids))
+        logger.warning(
+            "LLM did not return resolutions for IDs: %s", sorted(missing_ids)
+        )
 
     if extra_ids:
         logger.warning(
-            'LLM returned invalid IDs outside valid range 0-%d: %s (all returned IDs: %s)',
+            "LLM returned invalid IDs outside valid range 0-%d: %s (all returned IDs: %s)",
             len(state.unresolved_indices) - 1,
             sorted(extra_ids),
             sorted(received_ids),
@@ -358,7 +377,7 @@ async def _resolve_with_llm(
 
         if relative_id not in valid_relative_range:
             logger.warning(
-                'Skipping invalid LLM dedupe id %d (valid range: 0-%d, received %d resolutions)',
+                "Skipping invalid LLM dedupe id %d (valid range: 0-%d, received %d resolutions)",
                 relative_id,
                 len(state.unresolved_indices) - 1,
                 len(node_resolutions),
@@ -366,7 +385,9 @@ async def _resolve_with_llm(
             continue
 
         if relative_id in processed_relative_ids:
-            logger.warning('Duplicate LLM dedupe id %s received; ignoring.', relative_id)
+            logger.warning(
+                "Duplicate LLM dedupe id %s received; ignoring.", relative_id
+            )
             continue
         processed_relative_ids.add(relative_id)
 
@@ -380,7 +401,7 @@ async def _resolve_with_llm(
             resolved_node = indexes.existing_nodes[duplicate_idx]
         else:
             logger.warning(
-                'Invalid duplicate_idx %s for extracted node %s; treating as no duplicate.',
+                "Invalid duplicate_idx %s for extracted node %s; treating as no duplicate.",
                 duplicate_idx,
                 extracted_node.uuid,
             )
@@ -435,7 +456,7 @@ async def resolve_extracted_nodes(
             state.uuid_map[node.uuid] = node.uuid
 
     logger.debug(
-        'Resolved nodes: %s',
+        "Resolved nodes: %s",
         [(node.name, node.uuid) for node in state.resolved_nodes if node is not None],
     )
 
@@ -468,7 +489,9 @@ async def extract_attributes_from_nodes(
                 episode,
                 previous_episodes,
                 (
-                    entity_types.get(next((item for item in node.labels if item != 'Entity'), ''))
+                    entity_types.get(
+                        next((item for item in node.labels if item != "Entity"), "")
+                    )
                     if entity_types is not None
                     else None
                 ),
@@ -519,9 +542,9 @@ async def _extract_entity_attributes(
     attributes_context = _build_episode_context(
         # should not include summary
         node_data={
-            'name': node.name,
-            'entity_types': node.labels,
-            'attributes': node.attributes,
+            "name": node.name,
+            "entity_types": node.labels,
+            "attributes": node.attributes,
         },
         episode=episode,
         previous_episodes=previous_episodes,
@@ -532,7 +555,7 @@ async def _extract_entity_attributes(
         response_model=entity_type,
         model_size=ModelSize.small,
         group_id=node.group_id,
-        prompt_name='extract_nodes.extract_attributes',
+        prompt_name="extract_nodes.extract_attributes",
     )
 
     # validate response
@@ -553,10 +576,10 @@ async def _extract_entity_summary(
 
     summary_context = _build_episode_context(
         node_data={
-            'name': node.name,
-            'summary': truncate_at_sentence(node.summary, MAX_SUMMARY_CHARS),
-            'entity_types': node.labels,
-            'attributes': node.attributes,
+            "name": node.name,
+            "summary": truncate_at_sentence(node.summary, MAX_SUMMARY_CHARS),
+            "entity_types": node.labels,
+            "attributes": node.attributes,
         },
         episode=episode,
         previous_episodes=previous_episodes,
@@ -567,10 +590,12 @@ async def _extract_entity_summary(
         response_model=EntitySummary,
         model_size=ModelSize.small,
         group_id=node.group_id,
-        prompt_name='extract_nodes.extract_summary',
+        prompt_name="extract_nodes.extract_summary",
     )
 
-    node.summary = truncate_at_sentence(summary_response.get('summary', ''), MAX_SUMMARY_CHARS)
+    node.summary = truncate_at_sentence(
+        summary_response.get("summary", ""), MAX_SUMMARY_CHARS
+    )
 
 
 def _build_episode_context(
@@ -579,9 +604,11 @@ def _build_episode_context(
     previous_episodes: list[EpisodicNode] | None,
 ) -> dict[str, Any]:
     return {
-        'node': node_data,
-        'episode_content': episode.content if episode is not None else '',
-        'previous_episodes': (
-            [ep.content for ep in previous_episodes] if previous_episodes is not None else []
+        "node": node_data,
+        "episode_content": episode.content if episode is not None else "",
+        "previous_episodes": (
+            [ep.content for ep in previous_episodes]
+            if previous_episodes is not None
+            else []
         ),
     }

@@ -24,11 +24,11 @@ from .models import Message, PromptFunction, PromptVersion
 class EdgeDates(BaseModel):
     valid_at: str | None = Field(
         None,
-        description='The date and time when the relationship described by the edge fact became true or was established. YYYY-MM-DDTHH:MM:SS.SSSSSSZ or null.',
+        description="The date and time when the relationship described by the edge fact became true or was established. YYYY-MM-DDTHH:MM:SS.SSSSSSZ or null.",
     )
     invalid_at: str | None = Field(
         None,
-        description='The date and time when the relationship described by the edge fact stopped being true or ended. YYYY-MM-DDTHH:MM:SS.SSSSSSZ or null.',
+        description="The date and time when the relationship described by the edge fact stopped being true or ended. YYYY-MM-DDTHH:MM:SS.SSSSSSZ or null.",
     )
 
 
@@ -43,24 +43,24 @@ class Versions(TypedDict):
 def v1(context: dict[str, Any]) -> list[Message]:
     return [
         Message(
-            role='system',
-            content='You are an AI assistant that extracts datetime information for graph edges, focusing only on dates directly related to the establishment or change of the relationship described in the edge fact.',
+            role="system",
+            content="You are an AI assistant that extracts datetime information for graph edges, focusing only on dates directly related to the establishment or change of the relationship described in the edge fact.",
         ),
         Message(
-            role='user',
+            role="user",
             content=f"""
             <PREVIOUS MESSAGES>
-            {context['previous_episodes']}
+            {context["previous_episodes"]}
             </PREVIOUS MESSAGES>
             <CURRENT MESSAGE>
-            {context['current_episode']}
+            {context["current_episode"]}
             </CURRENT MESSAGE>
             <REFERENCE TIMESTAMP>
-            {context['reference_timestamp']}
+            {context["reference_timestamp"]}
             </REFERENCE TIMESTAMP>
             
             <FACT>
-            {context['edge_fact']}
+            {context["edge_fact"]}
             </FACT>
 
             IMPORTANT: Only extract time information if it is part of the provided fact. Otherwise ignore the time mentioned. Make sure to do your best to determine the dates if only the relative time is mentioned. (eg 10 years ago, 2 mins ago) based on the provided reference timestamp
@@ -88,4 +88,4 @@ def v1(context: dict[str, Any]) -> list[Message]:
     ]
 
 
-versions: Versions = {'v1': v1}
+versions: Versions = {"v1": v1}

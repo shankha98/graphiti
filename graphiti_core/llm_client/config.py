@@ -21,8 +21,8 @@ DEFAULT_TEMPERATURE = 1
 
 
 class ModelSize(Enum):
-    small = 'small'
-    medium = 'medium'
+    small = "small"
+    medium = "medium"
 
 
 class LLMConfig:

@@ -27,8 +27,8 @@ else:
         from google.genai import types
     except ImportError:
         raise ImportError(
-            'google-genai is required for GeminiEmbedder. '
-            'Install it with: pip install graphiti-core[google-genai]'
+            "google-genai is required for GeminiEmbedder. "
+            "Install it with: pip install graphiti-core[google-genai]"
         ) from None
 
 from pydantic import Field
@@ -37,7 +37,9 @@ from .client import EmbedderClient, EmbedderConfig
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EMBEDDING_MODEL = 'text-embedding-001'  # gemini-embedding-001 or text-embedding-005
+DEFAULT_EMBEDDING_MODEL = (
+    "text-embedding-001"  # gemini-embedding-001 or text-embedding-005
+)
 
 DEFAULT_BATCH_SIZE = 100
 
@@ -55,7 +57,7 @@ class GeminiEmbedder(EmbedderClient):
     def __init__(
         self,
         config: GeminiEmbedderConfig | None = None,
-        client: 'genai.Client | None' = None,
+        client: "genai.Client | None" = None,
         batch_size: int | None = None,
     ):
         """
@@ -76,7 +78,7 @@ class GeminiEmbedder(EmbedderClient):
         else:
             self.client = client
 
-        if batch_size is None and self.config.embedding_model == 'gemini-embedding-001':
+        if batch_size is None and self.config.embedding_model == "gemini-embedding-001":
             # Gemini API has a limit on the number of instances per request
             # https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/text-embeddings-api
             self.batch_size = 1
@@ -102,11 +104,17 @@ class GeminiEmbedder(EmbedderClient):
         result = await self.client.aio.models.embed_content(
             model=self.config.embedding_model or DEFAULT_EMBEDDING_MODEL,
             contents=[input_data],  # type: ignore[arg-type]  # mypy fails on broad union type
-            config=types.EmbedContentConfig(output_dimensionality=self.config.embedding_dim),
+            config=types.EmbedContentConfig(
+                output_dimensionality=self.config.embedding_dim
+            ),
         )
 
-        if not result.embeddings or len(result.embeddings) == 0 or not result.embeddings[0].values:
-            raise ValueError('No embeddings returned from Gemini API in create()')
+        if (
+            not result.embeddings
+            or len(result.embeddings) == 0
+            or not result.embeddings[0].values
+        ):
+            raise ValueError("No embeddings returned from Gemini API in create()")
 
         return result.embeddings[0].values
 
@@ -144,25 +152,26 @@ class GeminiEmbedder(EmbedderClient):
                 )
 
                 if not result.embeddings or len(result.embeddings) == 0:
-                    raise Exception('No embeddings returned')
+                    raise Exception("No embeddings returned")
 
                 # Process embeddings from this batch
                 for embedding in result.embeddings:
                     if not embedding.values:
-                        raise ValueError('Empty embedding values returned')
+                        raise ValueError("Empty embedding values returned")
                     all_embeddings.append(embedding.values)
 
             except Exception as e:
                 # If batch processing fails, fall back to individual processing
                 logger.warning(
-                    f'Batch embedding failed for batch {i // batch_size + 1}, falling back to individual processing: {e}'
+                    f"Batch embedding failed for batch {i // batch_size + 1}, falling back to individual processing: {e}"
                 )
 
                 for item in batch:
                     try:
                         # Process each item individually
                         result = await self.client.aio.models.embed_content(
-                            model=self.config.embedding_model or DEFAULT_EMBEDDING_MODEL,
+                            model=self.config.embedding_model
+                            or DEFAULT_EMBEDDING_MODEL,
                             contents=[item],  # type: ignore[arg-type]  # mypy fails on broad union type
                             config=types.EmbedContentConfig(
                                 output_dimensionality=self.config.embedding_dim
@@ -170,14 +179,16 @@ class GeminiEmbedder(EmbedderClient):
                         )
 
                         if not result.embeddings or len(result.embeddings) == 0:
-                            raise ValueError('No embeddings returned from Gemini API')
+                            raise ValueError("No embeddings returned from Gemini API")
                         if not result.embeddings[0].values:
-                            raise ValueError('Empty embedding values returned')
+                            raise ValueError("Empty embedding values returned")
 
                         all_embeddings.append(result.embeddings[0].values)
 
                     except Exception as individual_error:
-                        logger.error(f'Failed to embed individual item: {individual_error}')
+                        logger.error(
+                            f"Failed to embed individual item: {individual_error}"
+                        )
                         raise individual_error
 
         return all_embeddings

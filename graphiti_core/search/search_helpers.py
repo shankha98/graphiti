@@ -21,31 +21,32 @@ from graphiti_core.search.search_config import SearchResults
 
 def format_edge_date_range(edge: EntityEdge) -> str:
     # return f"{datetime(edge.valid_at).strftime('%Y-%m-%d %H:%M:%S') if edge.valid_at else 'date unknown'} - {(edge.invalid_at.strftime('%Y-%m-%d %H:%M:%S') if edge.invalid_at else 'present')}"
-    return f'{edge.valid_at if edge.valid_at else "date unknown"} - {(edge.invalid_at if edge.invalid_at else "present")}'
+    return f"{edge.valid_at if edge.valid_at else 'date unknown'} - {(edge.invalid_at if edge.invalid_at else 'present')}"
 
 
 def search_results_to_context_string(search_results: SearchResults) -> str:
     """Reformats a set of SearchResults into a single string to pass directly to an LLM as context"""
     fact_json = [
         {
-            'fact': edge.fact,
-            'valid_at': str(edge.valid_at),
-            'invalid_at': str(edge.invalid_at or 'Present'),
+            "fact": edge.fact,
+            "valid_at": str(edge.valid_at),
+            "invalid_at": str(edge.invalid_at or "Present"),
         }
         for edge in search_results.edges
     ]
     entity_json = [
-        {'entity_name': node.name, 'summary': node.summary} for node in search_results.nodes
+        {"entity_name": node.name, "summary": node.summary}
+        for node in search_results.nodes
     ]
     episode_json = [
         {
-            'source_description': episode.source_description,
-            'content': episode.content,
+            "source_description": episode.source_description,
+            "content": episode.content,
         }
         for episode in search_results.episodes
     ]
     community_json = [
-        {'community_name': community.name, 'summary': community.summary}
+        {"community_name": community.name, "summary": community.summary}
         for community in search_results.communities
     ]
 

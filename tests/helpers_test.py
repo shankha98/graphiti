@@ -31,7 +31,7 @@ from graphiti_core.utils.maintenance.graph_data_operations import clear_data
 load_dotenv()
 
 drivers: list[GraphProvider] = []
-if os.getenv('DISABLE_NEO4J') is None:
+if os.getenv("DISABLE_NEO4J") is None:
     try:
         from graphiti_core.driver.neo4j_driver import Neo4jDriver
 
@@ -39,7 +39,7 @@ if os.getenv('DISABLE_NEO4J') is None:
     except ImportError:
         raise
 
-if os.getenv('DISABLE_FALKORDB') is None:
+if os.getenv("DISABLE_FALKORDB") is None:
     try:
         from graphiti_core.driver.falkordb_driver import FalkorDriver
 
@@ -47,7 +47,7 @@ if os.getenv('DISABLE_FALKORDB') is None:
     except ImportError:
         raise
 
-if os.getenv('DISABLE_KUZU') is None:
+if os.getenv("DISABLE_KUZU") is None:
     try:
         from graphiti_core.driver.kuzu_driver import KuzuDriver
 
@@ -56,8 +56,8 @@ if os.getenv('DISABLE_KUZU') is None:
         raise
 
 # Disable Neptune for now
-os.environ['DISABLE_NEPTUNE'] = 'True'
-if os.getenv('DISABLE_NEPTUNE') is None:
+os.environ["DISABLE_NEPTUNE"] = "True"
+if os.getenv("DISABLE_NEPTUNE") is None:
     try:
         from graphiti_core.driver.neptune_driver import NeptuneDriver
 
@@ -65,23 +65,23 @@ if os.getenv('DISABLE_NEPTUNE') is None:
     except ImportError:
         raise
 
-NEO4J_URI = os.getenv('NEO4J_URI', 'bolt://localhost:7687')
-NEO4J_USER = os.getenv('NEO4J_USER', 'neo4j')
-NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD', 'test')
+NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "test")
 
-FALKORDB_HOST = os.getenv('FALKORDB_HOST', 'localhost')
-FALKORDB_PORT = os.getenv('FALKORDB_PORT', '6379')
-FALKORDB_USER = os.getenv('FALKORDB_USER', None)
-FALKORDB_PASSWORD = os.getenv('FALKORDB_PASSWORD', None)
+FALKORDB_HOST = os.getenv("FALKORDB_HOST", "localhost")
+FALKORDB_PORT = os.getenv("FALKORDB_PORT", "6379")
+FALKORDB_USER = os.getenv("FALKORDB_USER", None)
+FALKORDB_PASSWORD = os.getenv("FALKORDB_PASSWORD", None)
 
-NEPTUNE_HOST = os.getenv('NEPTUNE_HOST', 'localhost')
-NEPTUNE_PORT = os.getenv('NEPTUNE_PORT', 8182)
-AOSS_HOST = os.getenv('AOSS_HOST', None)
+NEPTUNE_HOST = os.getenv("NEPTUNE_HOST", "localhost")
+NEPTUNE_PORT = os.getenv("NEPTUNE_PORT", 8182)
+AOSS_HOST = os.getenv("AOSS_HOST", None)
 
-KUZU_DB = os.getenv('KUZU_DB', ':memory:')
+KUZU_DB = os.getenv("KUZU_DB", ":memory:")
 
-group_id = 'graphiti_test_group'
-group_id_2 = 'graphiti_test_group_2'
+group_id = "graphiti_test_group"
+group_id_2 = "graphiti_test_group_2"
 
 
 def get_driver(provider: GraphProvider) -> GraphDriver:
@@ -110,7 +110,7 @@ def get_driver(provider: GraphProvider) -> GraphDriver:
             aoss_host=AOSS_HOST,
         )
     else:
-        raise ValueError(f'Driver {provider} not available')
+        raise ValueError(f"Driver {provider} not available")
 
 
 @pytest.fixture(params=drivers)
@@ -130,31 +130,31 @@ embedding_dim = 384
 embeddings = {
     key: np.random.uniform(0.0, 0.9, embedding_dim).tolist()
     for key in [
-        'Alice',
-        'Bob',
-        'Alice likes Bob',
-        'test_entity_1',
-        'test_entity_2',
-        'test_entity_3',
-        'test_entity_4',
-        'test_entity_alice',
-        'test_entity_bob',
-        'test_entity_1 is a duplicate of test_entity_2',
-        'test_entity_3 is a duplicate of test_entity_4',
-        'test_entity_1 relates to test_entity_2',
-        'test_entity_1 relates to test_entity_3',
-        'test_entity_2 relates to test_entity_3',
-        'test_entity_1 relates to test_entity_4',
-        'test_entity_2 relates to test_entity_4',
-        'test_entity_3 relates to test_entity_4',
-        'test_entity_1 relates to test_entity_2',
-        'test_entity_3 relates to test_entity_4',
-        'test_entity_2 relates to test_entity_3',
-        'test_community_1',
-        'test_community_2',
+        "Alice",
+        "Bob",
+        "Alice likes Bob",
+        "test_entity_1",
+        "test_entity_2",
+        "test_entity_3",
+        "test_entity_4",
+        "test_entity_alice",
+        "test_entity_bob",
+        "test_entity_1 is a duplicate of test_entity_2",
+        "test_entity_3 is a duplicate of test_entity_4",
+        "test_entity_1 relates to test_entity_2",
+        "test_entity_1 relates to test_entity_3",
+        "test_entity_2 relates to test_entity_3",
+        "test_entity_1 relates to test_entity_4",
+        "test_entity_2 relates to test_entity_4",
+        "test_entity_3 relates to test_entity_4",
+        "test_entity_1 relates to test_entity_2",
+        "test_entity_3 relates to test_entity_4",
+        "test_entity_2 relates to test_entity_3",
+        "test_community_1",
+        "test_community_2",
     ]
 }
-embeddings['Alice Smith'] = embeddings['Alice']
+embeddings["Alice Smith"] = embeddings["Alice"]
 
 
 @pytest.fixture
@@ -165,10 +165,10 @@ def mock_embedder():
         if isinstance(input_data, str):
             return embeddings[input_data]
         elif isinstance(input_data, list):
-            combined_input = ' '.join(input_data)
+            combined_input = " ".join(input_data)
             return embeddings[combined_input]
         else:
-            raise ValueError(f'Unsupported input type: {type(input_data)}')
+            raise ValueError(f"Unsupported input type: {type(input_data)}")
 
     mock_model.create.side_effect = mock_embed
     return mock_model
@@ -181,7 +181,7 @@ def test_lucene_sanitize():
             'This has every escape character + - && || ! ( ) { } [ ] ^ " ~ * ? : \\ /',
             '\\This has every escape character \\+ \\- \\&\\& \\|\\| \\! \\( \\) \\{ \\} \\[ \\] \\^ \\" \\~ \\* \\? \\: \\\\ \\/',
         ),
-        ('this has no escape characters', 'this has no escape characters'),
+        ("this has no escape characters", "this has no escape characters"),
     ]
 
     for query, assert_result in queries:
@@ -198,7 +198,7 @@ async def get_node_count(driver: GraphDriver, uuids: list[str]) -> int:
         """,
         uuids=uuids,
     )
-    return int(results[0]['count'])
+    return int(results[0]["count"])
 
 
 async def get_edge_count(driver: GraphDriver, uuids: list[str]) -> int:
@@ -214,7 +214,7 @@ async def get_edge_count(driver: GraphDriver, uuids: list[str]) -> int:
         """,
         uuids=uuids,
     )
-    return sum(int(result['count']) for result in results)
+    return sum(int(result["count"]) for result in results)
 
 
 async def print_graph(graph_driver: GraphDriver):
@@ -224,18 +224,18 @@ async def print_graph(graph_driver: GraphDriver):
         RETURN n.uuid, n.name
         """,
     )
-    print('Nodes:')
+    print("Nodes:")
     for node in nodes:
-        print('  ', node)
+        print("  ", node)
     edges, _, _ = await graph_driver.execute_query(
         """
         MATCH (n)-[e]->(m)
         RETURN n.name, e.uuid, m.name
         """,
     )
-    print('Edges:')
+    print("Edges:")
     for edge in edges:
-        print('  ', edge)
+        print("  ", edge)
 
 
 async def assert_episodic_node_equals(retrieved: EpisodicNode, sample: EpisodicNode):
@@ -309,5 +309,5 @@ async def assert_entity_edge_equals(
     assert retrieved.attributes == sample.attributes
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])
