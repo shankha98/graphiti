@@ -62,7 +62,6 @@ from graphiti_core.search.search_utils import (
     RELEVANT_SCHEMA_LIMIT,
     get_mentioned_nodes,
 )
-from graphiti_core.telemetry import capture_event
 from graphiti_core.tracer import Tracer, create_tracer
 from graphiti_core.utils.bulk_utils import (
     RawEpisode,
@@ -229,30 +228,6 @@ class Graphiti:
             cross_encoder=self.cross_encoder,
             tracer=self.tracer,
         )
-
-        # Capture telemetry event
-        self._capture_initialization_telemetry()
-
-    def _capture_initialization_telemetry(self):
-        """Capture telemetry event for Graphiti initialization."""
-        try:
-            # Detect provider types from class names
-            llm_provider = self._get_provider_type(self.llm_client)
-            embedder_provider = self._get_provider_type(self.embedder)
-            reranker_provider = self._get_provider_type(self.cross_encoder)
-            database_provider = self._get_provider_type(self.driver)
-
-            properties = {
-                "llm_provider": llm_provider,
-                "embedder_provider": embedder_provider,
-                "reranker_provider": reranker_provider,
-                "database_provider": database_provider,
-            }
-
-            capture_event("graphiti_initialized", properties)
-        except Exception:
-            # Silently handle telemetry errors
-            pass
 
     def _get_provider_type(self, client) -> str:
         """Get provider type from client class name."""
